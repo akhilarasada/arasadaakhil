@@ -21,6 +21,62 @@
     document.querySelectorAll(sel).forEach(function (el, i) { el.style.setProperty('--i', i); });
   });
 
+  // Intro: split the paragraph into words that light up with scroll
+  var wordsEl = document.querySelector('[data-words]');
+  if (wordsEl) {
+    (function split(node) {
+      Array.prototype.slice.call(node.childNodes).forEach(function (child) {
+        if (child.nodeType === 3) {
+          var frag = document.createDocumentFragment();
+          child.textContent.split(/(\s+)/).forEach(function (part) {
+            if (!part) return;
+            if (/^\s+$/.test(part)) { frag.appendChild(document.createTextNode(part)); return; }
+            var span = document.createElement('span');
+            span.className = 'w';
+            span.textContent = part;
+            frag.appendChild(span);
+          });
+          node.replaceChild(frag, child);
+        } else if (child.nodeType === 1) {
+          split(child);
+        }
+      });
+    })(wordsEl);
+    var words = wordsEl.querySelectorAll('.w');
+    var lightWords = function () {
+      var r = wordsEl.getBoundingClientRect();
+      var vh = window.innerHeight;
+      // 0 when the paragraph top reaches 85% of the screen, 1 when its bottom reaches 45%
+      var progress = (vh * 0.85 - r.top) / (r.height + vh * 0.4);
+      var lit = reduced ? words.length : Math.round(Math.max(0, Math.min(1, progress)) * words.length);
+      for (var i = 0; i < words.length; i++) words[i].classList.toggle('on', i < lit);
+    };
+    window.addEventListener('scroll', lightWords, { passive: true });
+    window.addEventListener('resize', lightWords);
+    lightWords();
+  }
+
+  // Stats: count up from zero when they come into view
+  var counters = document.querySelectorAll('[data-count]');
+  function countUp(el) {
+    var end = +el.getAttribute('data-count'), start = null;
+    if (reduced) { el.textContent = end; return; }
+    requestAnimationFrame(function step(ts) {
+      if (start === null) start = ts;
+      var t = Math.max(0, Math.min((ts - start) / 1400, 1));
+      el.textContent = Math.round(end * (1 - Math.pow(1 - t, 3)));
+      if (t < 1) requestAnimationFrame(step);
+    });
+  }
+  if ('IntersectionObserver' in window) {
+    var cio = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) { countUp(entry.target); cio.unobserve(entry.target); }
+      });
+    }, { threshold: 0.6 });
+    counters.forEach(function (el) { el.textContent = '0'; cio.observe(el); });
+  }
+
   // Scroll reveal
   var items = document.querySelectorAll('.reveal');
   if ('IntersectionObserver' in window) {

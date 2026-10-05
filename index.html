@@ -7,7 +7,46 @@
   <meta name="description" content="Arasada Akhil — Team Lead and Full Stack Developer (.NET & ReactJS) building SaaS ERP and POS platforms in Hyderabad, India.">
   <meta property="og:title" content="Arasada Akhil — Team Lead & Full Stack Developer">
   <meta property="og:description" content="SaaS ERP/POS platforms, .NET on Azure, ReactJS, plus freelance websites, CMS, HRMS and custom tools.">
-  <meta property="og:type" content="website">
+  <meta property="og:type" content="profile">
+  <meta property="og:url" content="https://arasadaakhil.arasadaakhil.workers.dev/">
+  <meta property="og:site_name" content="Arasada Akhil">
+  <meta property="og:image" content="https://arasadaakhil.arasadaakhil.workers.dev/assets/og-image.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Arasada Akhil, Team Lead and Full Stack Developer">
+  <meta property="profile:first_name" content="Akhil">
+  <meta property="profile:last_name" content="Arasada">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Arasada Akhil — Team Lead & Full Stack Developer">
+  <meta name="twitter:description" content="SaaS ERP/POS platforms, .NET on Azure, ReactJS, plus freelance websites, CMS, HRMS and custom tools.">
+  <meta name="twitter:image" content="https://arasadaakhil.arasadaakhil.workers.dev/assets/og-image.jpg">
+  <meta name="author" content="Arasada Akhil">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="theme-color" content="#efeeeb">
+  <link rel="canonical" href="https://arasadaakhil.arasadaakhil.workers.dev/">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    "name": "Arasada Akhil",
+    "givenName": "Akhil",
+    "familyName": "Arasada",
+    "jobTitle": "Lead .NET Developer",
+    "description": "Team Lead and Full Stack Developer building SaaS ERP, POS and E-commerce platforms, and freelance websites, CMS platforms and HRMS tools.",
+    "url": "https://arasadaakhil.arasadaakhil.workers.dev/",
+    "image": "https://arasadaakhil.arasadaakhil.workers.dev/assets/akhil.webp",
+    "email": "mailto:arasadaakhil.mail@gmail.com",
+    "worksFor": { "@type": "Organization", "name": "Revalsys Technologies", "url": "https://www.revalsys.com/" },
+    "alumniOf": { "@type": "CollegeOrUniversity", "name": "Parvatha Reddy Babul Reddy Visvodaya Institute of Technology & Science" },
+    "address": { "@type": "PostalAddress", "addressLocality": "Hyderabad", "addressRegion": "Telangana", "addressCountry": "IN" },
+    "knowsAbout": [".NET", "C#", "ASP.NET Core", "Azure", "ReactJS", "NextJs", "REST APIs", "SaaS", "ERP", "POS", "E-commerce", "HRMS", "CMS", "Agile"],
+    "sameAs": [
+      "https://www.linkedin.com/in/arasadaakhil",
+      "https://github.com/akhilarasada",
+      "https://www.instagram.com/akhilgaduromeo/"
+    ]
+  }
+  </script>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230a0a0a'/%3E%3Crect x='10' y='10' width='12' height='12' fill='%23d12424'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -49,7 +88,13 @@
       <div class="hero__portrait">
         <img src="assets/akhil.webp" alt="Portrait of Arasada Akhil, looking to the side" width="1372" height="1147">
       </div>
-      <a href="#contact" class="hero__badge" data-cursor="Let's talk"><span>Open to<br>freelance<br>projects ↗</span></a>
+      <a href="#contact" class="hero__badge" data-cursor="Let's talk" aria-label="Open to freelance projects, get in touch">
+        <svg class="hero__badge-ring" viewBox="0 0 120 120" aria-hidden="true">
+          <defs><path id="badge-ring" d="M60 60 m-47 0 a47 47 0 1 1 94 0 a47 47 0 1 1 -94 0"/></defs>
+          <text><textPath href="#badge-ring" textLength="292" lengthAdjust="spacing">Open to freelance projects · Let's talk · </textPath></text>
+        </svg>
+        <span class="hero__badge-core" aria-hidden="true">↗</span>
+      </a>
 
       <div class="hero__content">
         <h1 class="hero__title">
@@ -80,10 +125,24 @@
     </section>
 
     <!-- Intro -->
-    <section class="intro">
-      <p class="intro__text reveal">
-        Hi, I'm Akhil — a team lead and full stack developer who likes his releases boring and his products dependable. I lead the build of <em>RevalERP</em>, a SaaS POS and ERP platform, across HRMS, Finance, Procurement and more — planning the sprints, unblocking the team, and taking features all the way to production. I also take on <em>freelance projects</em>: websites, CMS platforms, HRMS and custom tools.
-      </p>
+    <section class="intro" id="about">
+      <div class="intro__side">
+        <span class="label">(About me)</span>
+        <span class="intro__mark" aria-hidden="true"></span>
+      </div>
+
+      <div class="intro__main">
+        <p class="intro__text" data-words>
+          Hi, I'm Akhil. I lead the build of <em>RevalERP</em>, a SaaS POS and ERP platform, and our <em>E-commerce</em> platform: planning sprints, unblocking the team and shipping to production. After hours, I build <em>websites, CMS platforms and HRMS tools</em> for clients.
+        </p>
+
+        <ul class="stats">
+          <li class="stat reveal"><b data-count="8">8</b><span>ERP modules<br>led at Revalsys</span></li>
+          <li class="stat reveal"><b data-count="7">7</b><span>Freelance<br>builds shipped</span></li>
+          <li class="stat reveal"><b data-count="5">5</b><span>Certifications<br>earned</span></li>
+          <li class="stat reveal"><b data-count="3">3</b><span>Companies,<br>since 2023</span></li>
+        </ul>
+      </div>
     </section>
 
     <!-- Marquee -->
@@ -327,7 +386,7 @@
             <p class="exp__co">Revalsys Technologies · Hyderabad</p>
             </div>
           </div>
-          <p class="exp__note">Leading development and delivery of RevalERP — sprint planning, task assignment, status reviews and production deployments.</p>
+          <p class="exp__note">Leading development and delivery of RevalERP and the E-commerce platform — sprint planning, task assignment, status reviews and production deployments.</p>
         </li>
         <li class="exp__row reveal">
           <span class="exp__date">Jan 2025 — Feb 2026</span>
