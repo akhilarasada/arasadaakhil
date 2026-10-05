@@ -8,9 +8,9 @@
   <meta property="og:title" content="Arasada Akhil — Team Lead & Full Stack Developer">
   <meta property="og:description" content="SaaS ERP/POS platforms, .NET on Azure, ReactJS, plus freelance websites, CMS, HRMS and custom tools.">
   <meta property="og:type" content="profile">
-  <meta property="og:url" content="https://arasadaakhil.arasadaakhil.workers.dev/">
+  <meta property="og:url" content="https://arasadaakhil.website/">
   <meta property="og:site_name" content="Arasada Akhil">
-  <meta property="og:image" content="https://arasadaakhil.arasadaakhil.workers.dev/assets/og-image.jpg">
+  <meta property="og:image" content="https://arasadaakhil.website/assets/og-image.jpg">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="Arasada Akhil, Team Lead and Full Stack Developer">
@@ -19,11 +19,11 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Arasada Akhil — Team Lead & Full Stack Developer">
   <meta name="twitter:description" content="SaaS ERP/POS platforms, .NET on Azure, ReactJS, plus freelance websites, CMS, HRMS and custom tools.">
-  <meta name="twitter:image" content="https://arasadaakhil.arasadaakhil.workers.dev/assets/og-image.jpg">
+  <meta name="twitter:image" content="https://arasadaakhil.website/assets/og-image.jpg">
   <meta name="author" content="Arasada Akhil">
   <meta name="robots" content="index, follow, max-image-preview:large">
   <meta name="theme-color" content="#efeeeb">
-  <link rel="canonical" href="https://arasadaakhil.arasadaakhil.workers.dev/">
+  <link rel="canonical" href="https://arasadaakhil.website/">
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -33,8 +33,8 @@
     "familyName": "Arasada",
     "jobTitle": "Lead .NET Developer",
     "description": "Team Lead and Full Stack Developer building SaaS ERP, POS and E-commerce platforms, and freelance websites, CMS platforms and HRMS tools.",
-    "url": "https://arasadaakhil.arasadaakhil.workers.dev/",
-    "image": "https://arasadaakhil.arasadaakhil.workers.dev/assets/akhil.webp",
+    "url": "https://arasadaakhil.website/",
+    "image": "https://arasadaakhil.website/assets/akhil.webp",
     "email": "mailto:arasadaakhil.mail@gmail.com",
     "worksFor": { "@type": "Organization", "name": "Revalsys Technologies", "url": "https://www.revalsys.com/" },
     "alumniOf": { "@type": "CollegeOrUniversity", "name": "Parvatha Reddy Babul Reddy Visvodaya Institute of Technology & Science" },
@@ -52,7 +52,13 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=Funnel+Display:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
-  <script>document.documentElement.classList.add('js');</script>
+  <script>
+    // One address for visitors and Google: send workers.dev and www traffic to the main domain
+    if (/\.workers\.dev$|^www\./.test(location.hostname)) {
+      location.replace('https://arasadaakhil.website' + location.pathname + location.search + location.hash);
+    }
+    document.documentElement.classList.add('js');
+  </script>
 </head>
 <body>
 
