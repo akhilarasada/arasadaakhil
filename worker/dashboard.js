@@ -58,7 +58,28 @@ const STYLE = `
   .msg { min-height:100vh; display:grid; place-items:center; padding:24px; text-align:center; }
   .msg h1 { margin:0 0 14px; font-size:clamp(34px,6vw,64px); }
   .msg p { max-width:34em; margin:0 auto; color:var(--muted); }
-  @media (max-width:900px) { .tiles { grid-template-columns:1fr 1fr; } .grid { grid-template-columns:1fr; } }
+  .signout { padding:8px 14px; border:1px solid var(--line); border-radius:999px; font-size:13px; text-decoration:none; }
+  .signout:hover { background:var(--red); border-color:var(--red); color:#fff; }
+  .login { min-height:100vh; min-height:100svh; display:grid; grid-template-columns:1.1fr 1fr; }
+  .login__side { display:flex; flex-direction:column; justify-content:space-between; padding:clamp(24px,4vw,56px); }
+  .login__side h1 { margin:0; font-size:clamp(56px,10vw,150px); line-height:.86; }
+  .login__side h1 i { display:inline-block; width:.16em; height:.16em; margin-left:.06em; background:var(--red); }
+  .login__side p { max-width:22em; margin:20px 0 0; font:500 clamp(17px,1.7vw,24px)/1.2 var(--display); letter-spacing:-.02em; }
+  .login__panel { display:flex; flex-direction:column; justify-content:center; padding:clamp(28px,5vw,80px); background:#0d0d0b; color:var(--bg); }
+  .login__panel h2 { margin:14px 0 36px; font:500 clamp(30px,3.6vw,52px)/1 var(--display); letter-spacing:-.03em; }
+  .login__panel .label { color:var(--stone); }
+  .field { display:block; margin-bottom:26px; }
+  .field span { display:block; font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--stone); }
+  .field input { width:100%; padding:10px 0; background:transparent; border:0; border-bottom:1px solid rgba(255,255,255,.3); border-radius:0; color:var(--bg); font:inherit; font-size:18px; outline:none; transition:border-color .3s; }
+  .field input:focus { border-color:var(--red); }
+  .field input::placeholder { color:rgba(255,255,255,.28); }
+  .login__btn { align-self:flex-start; margin-top:6px; padding:16px 28px; background:var(--red); color:#fff; border:0; border-radius:999px; font:inherit; font-weight:500; cursor:pointer; transition:background .3s,color .3s; }
+  .login__btn:hover { background:var(--bg); color:var(--ink); }
+  .login__error { margin:0 0 24px; padding:12px 14px; border:1px solid var(--red); color:#ff9a9a; font-size:14px; }
+  .login__note { margin-top:28px; font-size:13px; color:var(--muted); }
+  .login__back { font-size:13px; }
+  @media (max-width:900px) { .tiles { grid-template-columns:1fr 1fr; } .grid { grid-template-columns:1fr; }
+    .login { grid-template-columns:1fr; } .login__side { gap:40px; } }
 `;
 
 const HEAD = title => `<!DOCTYPE html>
@@ -73,6 +94,34 @@ const HEAD = title => `<!DOCTYPE html>
 
 export function renderMessage(title, text) {
   return `${HEAD(title)}<body><div class="msg"><div><h1>${esc(title)}</h1><p>${esc(text)}</p></div></div></body></html>`;
+}
+
+// Sign-in page shown at /dashboard until a valid session exists
+export function renderLogin({ user, error }) {
+  return `${HEAD('Sign in — Dashboard')}
+<body><main class="login">
+  <section class="login__side">
+    <a class="brand" href="/">AA<i></i></a>
+    <div>
+      <h1>Dash<br>board<i></i></h1>
+      <p>Who is visiting, where they came from, and what they opened.</p>
+    </div>
+    <a class="login__back" href="/">← Back to the site</a>
+  </section>
+  <section class="login__panel">
+    <span class="label">(Private area)</span>
+    <h2>Sign in</h2>
+    ${error ? `<p class="login__error" role="alert">${esc(error)}</p>` : ''}
+    <form method="post" action="/dashboard">
+      <label class="field"><span>Username</span>
+        <input type="text" name="username" placeholder="${esc(user)}" autocomplete="username" autocapitalize="none" spellcheck="false" required autofocus></label>
+      <label class="field"><span>Password</span>
+        <input type="password" name="password" autocomplete="current-password" required></label>
+      <button class="login__btn" type="submit">Open dashboard →</button>
+    </form>
+    <p class="login__note">You stay signed in on this device for 7 days.</p>
+  </section>
+</main></body></html>`;
 }
 
 // Single-series daily bars: one hue, thin marks rounded at the data end, hover for exact values
@@ -150,7 +199,7 @@ export function renderDashboard(s) {
       <a class="brand" href="/">AA<i></i></a>
       <h1>Dashboard</h1>
     </div>
-    <nav class="tabs" aria-label="Period">${tabs}</nav>
+    <nav class="tabs" aria-label="Period">${tabs}<a class="signout" href="/dashboard/logout">Sign out</a></nav>
   </header>
 
   <section class="tiles">
