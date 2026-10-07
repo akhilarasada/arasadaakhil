@@ -1,0 +1,22 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "arasadaakhil",
+  "main": "worker/index.js",
+  "compatibility_date": "2026-09-01",
+
+  // The portfolio itself: plain files, served without running any code
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS"
+  },
+
+  // Visit data for /dashboard. The id is the database shown under
+  // Cloudflare > Storage & databases > D1 > portfolio-analytics
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "portfolio-analytics",
+      "database_id": "0928ad1d-6a2a-4e8e-bda2-27ee2590aa84"
+    }
+  ]
+}

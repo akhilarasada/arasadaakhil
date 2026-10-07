@@ -2,6 +2,31 @@
   var EMAIL = 'arasadaakhil.mail@gmail.com';
   var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+  // Anonymous visit tracking for /dashboard: no cookies, sent in the background
+  // after the page is up. Skipped on local previews.
+  var isLive = !/^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname) && location.protocol !== 'file:';
+  function track(type, name) {
+    if (!isLive) return;
+    try {
+      var data = JSON.stringify({
+        type: type, name: name || null, path: location.pathname,
+        ref: document.referrer, w: window.innerWidth
+      });
+      if (navigator.sendBeacon) navigator.sendBeacon('/api/track', data);
+      else fetch('/api/track', { method: 'POST', body: data, keepalive: true });
+    } catch (e) { /* tracking must never break the page */ }
+  }
+  window.addEventListener('load', function () { track('pageview'); });
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('a[href]');
+    if (!a) return;
+    var href = a.getAttribute('href');
+    if (/\.pdf$/i.test(href)) track('event', a.hasAttribute('download') ? 'Resume download' : 'Resume preview');
+    else if (/^mailto:/i.test(href)) track('event', 'Email click');
+    else if (/^tel:/i.test(href)) track('event', 'Phone click');
+    else if (/^https?:/i.test(href) && a.hostname !== location.hostname) track('event', 'Visit: ' + a.hostname.replace(/^www\./, ''));
+  });
+
   // Preloader, then hero entrance
   var loader = document.querySelector('.loader');
   function finish() {
@@ -264,6 +289,7 @@
       .then(function (r) {
         if (!r.ok || String(r.json.success) !== 'true') throw new Error(r.json.message || 'Send failed');
         form.reset();
+        track('event', 'Contact form sent');
         setNote('Thanks, your message is sent. I will get back to you soon.', 'ok');
       })
       .catch(function () {
