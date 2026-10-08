@@ -1,5 +1,6 @@
 (function () {
-  var EMAIL = 'arasadaakhil.mail@gmail.com';
+  var EMAIL = 'arasadaakhil.mail@gmail.com';      // inbox the contact form delivers to
+  var PUBLIC_EMAIL = 'contact@arasadaakhil.website'; // address shown to visitors
   var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   // Anonymous visit tracking for /dashboard: no cookies, sent in the background
