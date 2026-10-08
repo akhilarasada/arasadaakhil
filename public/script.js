@@ -297,7 +297,7 @@
         // Fall back to the visitor's own mail app so the message is not lost
         var body = data.get('message') + '\n\n' + data.get('name') + '\n' + data.get('email');
         setNote('Could not send from here. Opening your email app instead.', 'error');
-        window.location.href = 'mailto:' + EMAIL +
+        window.location.href = 'mailto:' + PUBLIC_EMAIL +
           '?subject=' + encodeURIComponent(subject) +
           '&body=' + encodeURIComponent(body);
       })
