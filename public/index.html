@@ -64,7 +64,6 @@
 <body>
 
   <div class="progress" aria-hidden="true"></div>
-  <div class="peek" aria-hidden="true"><img alt=""></div>
 
   <!-- Preloader -->
   <div class="loader" aria-hidden="true">
@@ -155,19 +154,53 @@
           <li class="stat reveal"><b data-count="5">5</b><span>Certifications<br>earned</span></li>
           <li class="stat reveal"><b data-count="3">3</b><span>Companies,<br>since 2023</span></li>
         </ul>
+        <div class="duo reveal">
+          <article class="duo__half duo__half--day">
+            <i class="duo__icon" aria-hidden="true"></i>
+            <span class="label">(By day)</span>
+            <h3>Team lead</h3>
+            <p>Lead .NET Developer at Revalsys Technologies, Hyderabad.</p>
+            <ul>
+              <li>RevalERP and the E-commerce platform</li>
+              <li>25+ ERP modules across HRMS, Finance, POS and more</li>
+              <li>Sprint planning, reviews and production releases</li>
+            </ul>
+          </article>
+          <article class="duo__half duo__half--night">
+            <i class="duo__icon" aria-hidden="true"></i>
+            <span class="label">(By night)</span>
+            <h3>Freelance builder</h3>
+            <p>Websites and tools for clients, built end to end.</p>
+            <ul>
+              <li>CMS websites live in five days</li>
+              <li>HRMS and hiring tools</li>
+              <li>40+ builds shipped</li>
+            </ul>
+          </article>
+        </div>
       </div>
     </section>
 
     <!-- Marquee -->
     <section class="marquee" aria-label="Tools and practices">
-      <p class="label">(Stack &amp; Practice)</p>
+      <div class="marquee__head">
+        <p class="label">(Stack &amp; Practice)</p>
+        <p class="marquee__hint label">Scroll to change its speed and direction</p>
+      </div>
       <div class="marquee__track">
-        <div class="marquee__inner">
-          <span>.NET</span><i></i><span>C#</span><i></i><span>Azure</span><i></i><span>ReactJS</span><i></i><span>NextJs</span><i></i><span>REST APIs</span><i></i><span>SaaS</span><i></i><span>ERP</span><i></i><span>POS</span><i></i><span>Agile</span><i></i><span>Python</span><i></i><span>Unity</span><i></i>
-        </div>
-        <div class="marquee__inner" aria-hidden="true">
-          <span>.NET</span><i></i><span>C#</span><i></i><span>Azure</span><i></i><span>ReactJS</span><i></i><span>NextJs</span><i></i><span>REST APIs</span><i></i><span>SaaS</span><i></i><span>ERP</span><i></i><span>POS</span><i></i><span>Agile</span><i></i><span>Python</span><i></i><span>Unity</span><i></i>
-        </div>
+        <b class="marquee__tag">Backend</b>
+        <div class="marquee__inner"><span>.NET Core</span><i></i><span>C#</span><i></i><span>ASP.NET Core Web API</span><i></i><span>Entity Framework Core</span><i></i><span>ASP.NET MVC</span><i></i><span>REST APIs</span><i></i><span>Microservices</span><i></i><span>SignalR</span><i></i><span>Background Jobs</span><i></i></div>
+        <div class="marquee__inner" aria-hidden="true"><span>.NET Core</span><i></i><span>C#</span><i></i><span>ASP.NET Core Web API</span><i></i><span>Entity Framework Core</span><i></i><span>ASP.NET MVC</span><i></i><span>REST APIs</span><i></i><span>Microservices</span><i></i><span>SignalR</span><i></i><span>Background Jobs</span><i></i></div>
+      </div>
+      <div class="marquee__track marquee__track--outline" data-reverse="">
+        <b class="marquee__tag">Data &amp; Cloud</b>
+        <div class="marquee__inner"><span>MS SQL Server</span><i></i><span>PostgreSQL</span><i></i><span>MongoDB</span><i></i><span>Stored Procedures</span><i></i><span>Query Optimization</span><i></i><span>Azure</span><i></i><span>Azure DevOps</span><i></i><span>CI/CD</span><i></i><span>AWS</span><i></i></div>
+        <div class="marquee__inner" aria-hidden="true"><span>MS SQL Server</span><i></i><span>PostgreSQL</span><i></i><span>MongoDB</span><i></i><span>Stored Procedures</span><i></i><span>Query Optimization</span><i></i><span>Azure</span><i></i><span>Azure DevOps</span><i></i><span>CI/CD</span><i></i><span>AWS</span><i></i></div>
+      </div>
+      <div class="marquee__track">
+        <b class="marquee__tag">Frontend &amp; Practice</b>
+        <div class="marquee__inner"><span>ReactJS</span><i></i><span>NextJs</span><i></i><span>Angular</span><i></i><span>JavaScript</span><i></i><span>HTML5</span><i></i><span>CSS3</span><i></i><span>Git</span><i></i><span>Swagger</span><i></i><span>Agile / Scrum</span><i></i><span>Python</span><i></i><span>Unity</span><i></i></div>
+        <div class="marquee__inner" aria-hidden="true"><span>ReactJS</span><i></i><span>NextJs</span><i></i><span>Angular</span><i></i><span>JavaScript</span><i></i><span>HTML5</span><i></i><span>CSS3</span><i></i><span>Git</span><i></i><span>Swagger</span><i></i><span>Agile / Scrum</span><i></i><span>Python</span><i></i><span>Unity</span><i></i></div>
       </div>
     </section>
 
@@ -180,146 +213,158 @@
 
       <div class="rail">
         <div class="rail__pin">
-          <div class="rail__track">
-            <article class="project reveal">
-          <div class="project__visual project__visual--erp" aria-hidden="true">
-            <div class="tiles">
-              <span>HRMS</span><span>Finance</span><span>POS</span><span>CMS</span>
-              <span>Ticket CRM</span><span>Procurement</span><span>Sales</span><span>Projects</span>
-            </div>
-            <b class="project__no">01</b>
-          </div>
-          <div class="project__body">
-            <p class="label">SaaS · ERP · POS · Team Lead</p>
-            <h3>RevalERP</h3>
-            <p class="project__desc">A comprehensive SaaS-based POS and ERP platform. I lead its development and delivery — coordinating eight business modules, running sprint planning and status reviews, and overseeing feature releases into production with quality and stability.</p>
-            <dl class="meta">
-              <div><dt>Role</dt><dd>Lead .NET Developer</dd></div>
-              <div><dt>Timeline</dt><dd>Mar 2026 — Present</dd></div>
-              <div><dt>Year</dt><dd>2026</dd></div>
-              <div><dt>Team</dt><dd>Revalsys Technologies</dd></div>
-            </dl>
-            <a class="link-btn" href="https://revalsys.revalerp.com/" target="_blank" rel="noopener" data-cursor="Visit">revalsys.revalerp.com <span aria-hidden="true">↗</span></a>
-          </div>
-        </article>
-
-            <article class="project project--flip reveal">
-          <div class="project__visual project__visual--hr" aria-hidden="true">
-            <div class="hr">
-              <div class="hr__people">
-                <span class="hr__label">Employees</span>
-                <div class="hr__person"><i></i><span><b></b><b></b></span><em>Present</em></div>
-                <div class="hr__person"><i></i><span><b></b><b></b></span><em class="hot">On leave</em></div>
-                <div class="hr__person"><i></i><span><b></b><b></b></span><em>Present</em></div>
+          <div class="rail__stage">
+            <div class="desk" aria-hidden="true">
+              <div class="desk__screen">
+                <div class="desk__bar"><i></i><i></i><i></i><span id="desk-title">RevalERP</span><em>akhil@work</em></div>
+                <div class="desk__apps">
+              <div class="desk__app is-on" data-app="0">
+        <div class="tiles">
+          <span>HRMS</span><span>Finance</span><span>POS</span><span>CMS</span>
+          <span>Ticket CRM</span><span>Procurement</span><span>Sales</span><span>Projects</span>
+        </div>
+        
               </div>
-              <div class="hr__cal">
-                <span class="hr__label">Attendance</span>
-                <div class="hr__days">
-                  <i></i><i></i><i></i><i></i><i></i><i class="off"></i><i class="off"></i>
-                  <i></i><i></i><i class="hot"></i><i></i><i></i><i class="off"></i><i class="off"></i>
-                  <i></i><i></i><i></i><i></i><i class="hot"></i><i class="off"></i><i class="off"></i>
-                  <i></i><i></i><i></i><i class="next"></i><i class="next"></i><i class="off"></i><i class="off"></i>
+              <div class="desk__app" data-app="1">
+        <div class="hr">
+          <div class="hr__people">
+            <span class="hr__label">Employees</span>
+            <div class="hr__person"><i></i><span><b></b><b></b></span><em>Present</em></div>
+            <div class="hr__person"><i></i><span><b></b><b></b></span><em class="hot">On leave</em></div>
+            <div class="hr__person"><i></i><span><b></b><b></b></span><em>Present</em></div>
+          </div>
+          <div class="hr__cal">
+            <span class="hr__label">Attendance</span>
+            <div class="hr__days">
+              <i></i><i></i><i></i><i></i><i></i><i class="off"></i><i class="off"></i>
+              <i></i><i></i><i class="hot"></i><i></i><i></i><i class="off"></i><i class="off"></i>
+              <i></i><i></i><i></i><i></i><i class="hot"></i><i class="off"></i><i class="off"></i>
+              <i></i><i></i><i></i><i class="next"></i><i class="next"></i><i class="off"></i><i class="off"></i>
+            </div>
+          </div>
+        </div>
+        
+              </div>
+              <div class="desk__app" data-app="2">
+        <div class="ar">
+          <span class="ar__tag">Live session</span>
+          <svg class="ar__scene" viewBox="0 0 400 300">
+            <line class="link" x1="168" y1="150" x2="118" y2="112"/>
+            <line class="link" x1="234" y1="148" x2="286" y2="96"/>
+            <line class="link" x1="240" y1="166" x2="302" y2="186"/>
+
+            <!-- floating notes panel -->
+            <g class="float">
+              <g transform="translate(24 62) skewY(-7)">
+                <rect class="glass" width="98" height="66" rx="6"/>
+                <rect class="hot" x="10" y="10" width="14" height="14"/>
+                <rect class="ink" x="32" y="12" width="52" height="4"/>
+                <rect class="dim" x="32" y="21" width="34" height="3"/>
+                <rect class="dim" x="10" y="36" width="78" height="3"/>
+                <rect class="dim" x="10" y="45" width="60" height="3"/>
+                <rect class="dim" x="10" y="54" width="70" height="3"/>
+              </g>
+            </g>
+
+            <!-- floating participants panel -->
+            <g class="float float--b">
+              <g transform="translate(278 38) skewY(7)">
+                <rect class="glass" width="100" height="58" rx="6"/>
+                <circle class="ink" cx="20" cy="20" r="8"/>
+                <rect class="ink" x="36" y="15" width="48" height="4"/>
+                <rect class="dim" x="36" y="23" width="30" height="3"/>
+                <circle class="dim" cx="20" cy="42" r="8"/>
+                <rect class="dim" x="36" y="38" width="42" height="4"/>
+                <rect class="dim" x="36" y="46" width="26" height="3"/>
+              </g>
+            </g>
+
+            <!-- floating video panel -->
+            <g class="float float--c">
+              <g transform="translate(300 160)">
+                <rect class="glass" width="74" height="48" rx="6"/>
+                <path class="hot" d="M30 14 L48 24 L30 34 Z"/>
+              </g>
+            </g>
+
+            <!-- wireframe cube -->
+            <g class="float float--b">
+              <g class="spin">
+                <path class="wire" d="M72 196 L98 211 L98 241 L72 256 L46 241 L46 211 Z"/>
+                <path class="wire" d="M72 226 L72 256 M72 226 L46 211 M72 226 L98 211"/>
+              </g>
+            </g>
+
+            <!-- orbiting sphere -->
+            <g class="float float--c">
+              <circle class="wire" cx="200" cy="52" r="15"/>
+              <ellipse class="wire orbit" cx="200" cy="52" rx="15" ry="15"/>
+              <circle class="hot" cx="200" cy="52" r="3"/>
+            </g>
+
+            <!-- person wearing the headset -->
+            <path class="skin" d="M128 300 C128 240 160 214 200 214 C240 214 272 240 272 300 Z"/>
+            <rect class="skin" x="185" y="194" width="30" height="28"/>
+            <circle class="skin" cx="200" cy="158" r="44"/>
+            <path class="strap" d="M159 142 C166 104 234 104 241 142"/>
+            <rect class="visor" x="148" y="140" width="104" height="38" rx="15"/>
+            <rect class="scan" x="160" y="156" width="80" height="6" rx="3"/>
+          </svg>
+          <span class="ar__users"><i></i><i></i><i></i> 3 in session</span>
+        </div>
+        
+              </div>
+                </div>
+              </div>
+              <div class="desk__neck"></div>
+              <div class="desk__foot"></div>
+            </div>
+
+            <div class="rail__side">
+              <div class="desk__dock" role="tablist" aria-label="Projects"><button type="button" data-go="0" class="is-on">RevalERP</button><button type="button" data-go="1">SHRMPro</button><button type="button" data-go="2">AR Sessions</button></div>
+              <div class="rail__view">
+                <div class="rail__track">
+              <div class="project__body">
+        <p class="label">SaaS · ERP · POS · Team Lead</p>
+        <h3>RevalERP</h3>
+        <p class="project__desc">A comprehensive SaaS-based POS and ERP platform. I lead its development and delivery — coordinating eight business modules, running sprint planning and status reviews, and overseeing feature releases into production with quality and stability.</p>
+        <dl class="meta">
+          <div><dt>Role</dt><dd>Lead .NET Developer</dd></div>
+          <div><dt>Timeline</dt><dd>Mar 2026 — Present</dd></div>
+          <div><dt>Year</dt><dd>2026</dd></div>
+          <div><dt>Team</dt><dd>Revalsys Technologies</dd></div>
+        </dl>
+        <a class="link-btn" href="https://revalsys.revalerp.com/" target="_blank" rel="noopener" data-cursor="Visit">revalsys.revalerp.com <span aria-hidden="true">↗</span></a>
+      
+              </div>
+              <div class="project__body">
+        <p class="label">Enterprise · HR Management · .NET</p>
+        <h3>SHRMPro</h3>
+        <p class="project__desc">A .NET-based enterprise HR management solution. I worked on feature development, performance optimization and seamless integrations — making the system faster and the experience smoother for the people using it every day.</p>
+        <dl class="meta">
+          <div><dt>Role</dt><dd>.NET Developer</dd></div>
+          <div><dt>Timeline</dt><dd>1 Year 6 Months</dd></div>
+          <div><dt>Year</dt><dd>2024 — 2026</dd></div>
+          <div><dt>Team</dt><dd>Sphinx Worldbiz</dd></div>
+        </dl>
+        <a class="link-btn" href="https://www.shrmpro.com/" target="_blank" rel="noopener" data-cursor="Visit">shrmpro.com <span aria-hidden="true">↗</span></a>
+      
+              </div>
+              <div class="project__body">
+        <p class="label">Augmented Reality · Unity · Real-time</p>
+        <h3>AR Sessions</h3>
+        <p class="project__desc">An augmented reality online session application built in Unity, with real-time session management and interactive AR components. I led a team of three developers — and improved project delivery times by 30%.</p>
+        <dl class="meta">
+          <div><dt>Role</dt><dd>Intern · Dev Team Lead</dd></div>
+          <div><dt>Timeline</dt><dd>1 Year 1 Month</dd></div>
+          <div><dt>Year</dt><dd>2023 — 2024</dd></div>
+          <div><dt>Team</dt><dd>Virtusa</dd></div>
+        </dl>
+      
+              </div>
                 </div>
               </div>
             </div>
-            <b class="project__no">02</b>
-          </div>
-          <div class="project__body">
-            <p class="label">Enterprise · HR Management · .NET</p>
-            <h3>SHRMPro</h3>
-            <p class="project__desc">A .NET-based enterprise HR management solution. I worked on feature development, performance optimization and seamless integrations — making the system faster and the experience smoother for the people using it every day.</p>
-            <dl class="meta">
-              <div><dt>Role</dt><dd>.NET Developer</dd></div>
-              <div><dt>Timeline</dt><dd>1 Year 6 Months</dd></div>
-              <div><dt>Year</dt><dd>2024 — 2026</dd></div>
-              <div><dt>Team</dt><dd>Sphinx Worldbiz</dd></div>
-            </dl>
-            <a class="link-btn" href="https://www.shrmpro.com/" target="_blank" rel="noopener" data-cursor="Visit">shrmpro.com <span aria-hidden="true">↗</span></a>
-          </div>
-        </article>
-
-            <article class="project reveal">
-          <div class="project__visual project__visual--ar" aria-hidden="true">
-            <div class="ar">
-              <span class="ar__tag">Live session</span>
-              <svg class="ar__scene" viewBox="0 0 400 300">
-                <line class="link" x1="168" y1="150" x2="118" y2="112"/>
-                <line class="link" x1="234" y1="148" x2="286" y2="96"/>
-                <line class="link" x1="240" y1="166" x2="302" y2="186"/>
-
-                <!-- floating notes panel -->
-                <g class="float">
-                  <g transform="translate(24 62) skewY(-7)">
-                    <rect class="glass" width="98" height="66" rx="6"/>
-                    <rect class="hot" x="10" y="10" width="14" height="14"/>
-                    <rect class="ink" x="32" y="12" width="52" height="4"/>
-                    <rect class="dim" x="32" y="21" width="34" height="3"/>
-                    <rect class="dim" x="10" y="36" width="78" height="3"/>
-                    <rect class="dim" x="10" y="45" width="60" height="3"/>
-                    <rect class="dim" x="10" y="54" width="70" height="3"/>
-                  </g>
-                </g>
-
-                <!-- floating participants panel -->
-                <g class="float float--b">
-                  <g transform="translate(278 38) skewY(7)">
-                    <rect class="glass" width="100" height="58" rx="6"/>
-                    <circle class="ink" cx="20" cy="20" r="8"/>
-                    <rect class="ink" x="36" y="15" width="48" height="4"/>
-                    <rect class="dim" x="36" y="23" width="30" height="3"/>
-                    <circle class="dim" cx="20" cy="42" r="8"/>
-                    <rect class="dim" x="36" y="38" width="42" height="4"/>
-                    <rect class="dim" x="36" y="46" width="26" height="3"/>
-                  </g>
-                </g>
-
-                <!-- floating video panel -->
-                <g class="float float--c">
-                  <g transform="translate(300 160)">
-                    <rect class="glass" width="74" height="48" rx="6"/>
-                    <path class="hot" d="M30 14 L48 24 L30 34 Z"/>
-                  </g>
-                </g>
-
-                <!-- wireframe cube -->
-                <g class="float float--b">
-                  <g class="spin">
-                    <path class="wire" d="M72 196 L98 211 L98 241 L72 256 L46 241 L46 211 Z"/>
-                    <path class="wire" d="M72 226 L72 256 M72 226 L46 211 M72 226 L98 211"/>
-                  </g>
-                </g>
-
-                <!-- orbiting sphere -->
-                <g class="float float--c">
-                  <circle class="wire" cx="200" cy="52" r="15"/>
-                  <ellipse class="wire orbit" cx="200" cy="52" rx="15" ry="15"/>
-                  <circle class="hot" cx="200" cy="52" r="3"/>
-                </g>
-
-                <!-- person wearing the headset -->
-                <path class="skin" d="M128 300 C128 240 160 214 200 214 C240 214 272 240 272 300 Z"/>
-                <rect class="skin" x="185" y="194" width="30" height="28"/>
-                <circle class="skin" cx="200" cy="158" r="44"/>
-                <path class="strap" d="M159 142 C166 104 234 104 241 142"/>
-                <rect class="visor" x="148" y="140" width="104" height="38" rx="15"/>
-                <rect class="scan" x="160" y="156" width="80" height="6" rx="3"/>
-              </svg>
-              <span class="ar__users"><i></i><i></i><i></i> 3 in session</span>
-            </div>
-            <b class="project__no">03</b>
-          </div>
-          <div class="project__body">
-            <p class="label">Augmented Reality · Unity · Real-time</p>
-            <h3>AR Sessions</h3>
-            <p class="project__desc">An augmented reality online session application built in Unity, with real-time session management and interactive AR components. I led a team of three developers — and improved project delivery times by 30%.</p>
-            <dl class="meta">
-              <div><dt>Role</dt><dd>Intern · Dev Team Lead</dd></div>
-              <div><dt>Timeline</dt><dd>1 Year 1 Month</dd></div>
-              <div><dt>Year</dt><dd>2023 — 2024</dd></div>
-              <div><dt>Team</dt><dd>Virtusa</dd></div>
-            </dl>
-          </div>
-        </article>
           </div>
           <div class="rail__meter" aria-hidden="true">
             <span><b id="rail-now">01</b> / 03</span>
@@ -338,7 +383,7 @@
       </div>
 
       <div class="fl">
-        <a class="fl__card fl__card--feature reveal" href="https://alicms.netlify.app/" data-peek="assets/work/alicms.jpg" target="_blank" rel="noopener" data-cursor="Open">
+        <a class="fl__card fl__card--feature reveal" href="https://alicms.netlify.app/" target="_blank" rel="noopener" data-cursor="Open">
           <div class="fl__big" aria-hidden="true"><b>5</b><span>days</span></div>
           <div>
             <div class="fl__top"><span>01</span><span class="tag tag--red">CMS Platform</span></div>
@@ -353,7 +398,7 @@
 
       <ul class="fl-rows">
           <li class="reveal">
-            <a class="fl-row" href="https://skillon.netlify.app/" target="_blank" rel="noopener" data-peek="assets/work/skillon.jpg" data-cursor="Open">
+            <a class="fl-row" href="https://skillon.netlify.app/" target="_blank" rel="noopener" data-cursor="Open">
               <span class="fl-row__no">02</span>
               <h3>SkillOn</h3>
               <p>A learn, build, get hired platform for freshers and experienced professionals: AI resume builder for ATS-friendly CVs, skill tests with certificates, 1-1 mock interviews, job-ready courses and campus-to-job programs.</p>
@@ -362,7 +407,7 @@
             </a>
           </li>
           <li class="reveal">
-            <a class="fl-row" href="https://signalhiretool.netlify.app/" target="_blank" rel="noopener" data-peek="assets/work/signalhire.jpg" data-cursor="Open">
+            <a class="fl-row" href="https://signalhiretool.netlify.app/" target="_blank" rel="noopener" data-cursor="Open">
               <span class="fl-row__no">03</span>
               <h3>SignalHire</h3>
               <p>A resume review tool for recruiters. Upload resumes one at a time or in bulk, add LinkedIn profiles, and screen every candidate against a job description you create, to shortlist with confidence.</p>
@@ -371,7 +416,7 @@
             </a>
           </li>
           <li class="reveal">
-            <a class="fl-row" href="https://hrmssphere.netlify.app/" target="_blank" rel="noopener" data-peek="assets/work/hrmsphere.jpg" data-cursor="Open">
+            <a class="fl-row" href="https://hrmssphere.netlify.app/" target="_blank" rel="noopener" data-cursor="Open">
               <span class="fl-row__no">04</span>
               <h3>HRMSphere</h3>
               <p>A hire-to-retire HR management system: employee profiles, leave management, geofenced attendance, payroll processing and role-based access for admins, managers and employees.</p>
@@ -380,7 +425,7 @@
             </a>
           </li>
           <li class="reveal">
-            <a class="fl-row" href="https://calikeshkrishna.com/" target="_blank" rel="noopener" data-peek="assets/work/ca.jpg" data-cursor="Open">
+            <a class="fl-row" href="https://calikeshkrishna.com/" target="_blank" rel="noopener" data-cursor="Open">
               <span class="fl-row__no">05</span>
               <h3>Likesh Krishna &amp; Associates</h3>
               <p>Website for a chartered accountancy firm in Hyderabad and Vijayawada, covering services, sectors, blog and careers, and running on its own CMS so the firm updates content itself.</p>
@@ -389,7 +434,7 @@
             </a>
           </li>
           <li class="reveal">
-            <a class="fl-row" href="https://sravanthimakeuppro.in/" target="_blank" rel="noopener" data-peek="assets/work/sravanthi.jpg" data-cursor="Open">
+            <a class="fl-row" href="https://sravanthimakeuppro.in/" target="_blank" rel="noopener" data-cursor="Open">
               <span class="fl-row__no">06</span>
               <h3>Sravanthi Makeup Pro</h3>
               <p>Website for a bridal makeup artist and salon in Nellore, where clients browse the services on offer and book their appointment online.</p>
@@ -398,7 +443,7 @@
             </a>
           </li>
           <li class="reveal">
-            <a class="fl-row" href="https://srphototest.netlify.app/" target="_blank" rel="noopener" data-peek="assets/work/srphoto.jpg" data-cursor="Open">
+            <a class="fl-row" href="https://srphototest.netlify.app/" target="_blank" rel="noopener" data-cursor="Open">
               <span class="fl-row__no">07</span>
               <h3>SR Photography</h3>
               <p>A wedding photography and films studio site, currently in development: galleries, featured stories, services, client testimonials and date booking.</p>
@@ -678,12 +723,23 @@
 
       <footer class="footer">
         <span>© <span id="year">2026</span> Arasada Akhil</span>
-        <span class="footer__note">This site logs visits (IP address, device and pages viewed) to understand its audience.</span>
+        <button type="button" class="footer__prefs" id="consent-open">Tracking preferences</button>
         <a href="#top">Back to top ↑</a>
       </footer>
     </section>
 
   </main>
+
+  <div class="consent" id="consent" role="dialog" aria-labelledby="consent-title" hidden>
+    <div class="consent__text">
+      <h2 id="consent-title">Tracking consent</h2>
+      <p>This site records visits (IP address, device and pages viewed) to understand its audience and improve the work shown here. No advertising cookies, and nothing is sold or shared. Choose "Accept" to allow this.</p>
+    </div>
+    <div class="consent__actions">
+      <button type="button" class="btn" data-consent="yes">Accept</button>
+      <button type="button" class="consent__decline" data-consent="no">Decline</button>
+    </div>
+  </div>
 
   <script src="liquid.js"></script>
   <script src="script.js"></script>

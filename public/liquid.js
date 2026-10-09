@@ -94,7 +94,7 @@
   }
 
   var points = new Float32Array(POINTS * 3), next = 0;
-  var last = null, visible = true, reveal = 0, revealAt = null, started = performance.now();
+  var last = null, visible = true, started = performance.now();
 
   function resize() {
     var r = holder.getBoundingClientRect();
@@ -122,12 +122,10 @@
   function frame(now) {
     if (!visible || document.hidden) { requestAnimationFrame(frame); return; }
     for (var i = 0; i < POINTS; i++) points[i * 3 + 2] *= 0.968;
-    if (revealAt === null && document.body.classList.contains('loaded')) revealAt = now + 250;
-    if (revealAt !== null) reveal = Math.max(0, Math.min(1, (now - revealAt) / 1800));
 
     gl.uniform1f(U.uAspect, canvas.width / canvas.height);
     gl.uniform1f(U.uTime, (now - started) / 1000);
-    gl.uniform1f(U.uReveal, reveal);
+    gl.uniform1f(U.uReveal, 1.0);   // the entrance is a CSS wipe now
     gl.uniform3fv(U.uP, points);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     requestAnimationFrame(frame);

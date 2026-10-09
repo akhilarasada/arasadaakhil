@@ -6,8 +6,10 @@
   // Visit tracking for /dashboard: no cookies, sent in the background after the
   // page is up. Skipped on local previews.
   var isLive = !/^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname) && location.protocol !== 'file:';
+  var consent = null, waiting = [];
+  try { consent = localStorage.getItem('consent'); } catch (e) { /* private mode */ }
   function track(type, name, extra) {
-    if (!isLive) return;
+    if (!isLive || consent === 'no') return;
     try {
       var payload = {
         type: type, name: name || null, path: location.pathname,
@@ -16,6 +18,8 @@
       };
       if (extra) for (var key in extra) payload[key] = extra[key];
       var data = JSON.stringify(payload);
+      // Until the visitor answers the consent box, events wait here
+      if (consent !== 'yes') { if (waiting.length < 30) waiting.push(data); return; }
       if (navigator.sendBeacon) navigator.sendBeacon('/api/track', data);
       else fetch('/api/track', { method: 'POST', body: data, keepalive: true });
     } catch (e) { /* tracking must never break the page */ }
@@ -255,6 +259,24 @@
     setInterval(tick, 20000);
   }
 
+  // The hero name is split into letters so each can run in from the left and react to the pointer
+  var letterIndex = 0;
+  document.querySelectorAll('.hero__title .line > span').forEach(function (line) {
+    var text = line.textContent;
+    line.textContent = '';
+    line.setAttribute('aria-label', text);
+    text.split('').forEach(function (ch) {
+      var span = document.createElement('span');
+      span.className = 'hl';
+      span.setAttribute('aria-hidden', 'true');
+      span.textContent = ch;
+      // Delay the run-in per letter, but never the hover colour
+      var delay = (letterIndex++ * 0.055).toFixed(3) + 's';
+      span.style.transitionDelay = delay + ', ' + delay + ', 0s';
+      line.appendChild(span);
+    });
+  });
+
   // Nav links roll their text on hover
   document.querySelectorAll('.nav__links a').forEach(function (a) {
     var text = a.textContent;
@@ -313,19 +335,35 @@
   var railTrack = document.querySelector('.rail__track');
   var railNow = document.getElementById('rail-now');
   var railCount = railTrack ? railTrack.children.length : 0;
-
-  // Screenshot that trails the pointer over freelance projects
-  var shotEl = document.querySelector('.peek');
-  var shotImg = shotEl.querySelector('img');
-  var shot = { x: 0, y: 0, tx: 0, ty: 0 };
-  if (finePointer) {
-    document.querySelectorAll('[data-peek]').forEach(function (row) {
-      var src = row.getAttribute('data-peek');
-      new Image().src = src;   // warm the cache so the first hover is instant
-      row.addEventListener('mouseenter', function () { shotImg.src = src; shotEl.classList.add('is-on'); });
-      row.addEventListener('mouseleave', function () { shotEl.classList.remove('is-on'); });
+  var deskApps = document.querySelectorAll('.desk__app');
+  var dockButtons = document.querySelectorAll('.desk__dock button');
+  var deskTitle = document.getElementById('desk-title');
+  var shownApp = -1;
+  function showApp(i) {
+    if (i === shownApp) return;
+    shownApp = i;
+    deskApps.forEach(function (el, k) { el.classList.toggle('is-on', k === i); });
+    dockButtons.forEach(function (el, k) { el.classList.toggle('is-on', k === i); });
+    deskTitle.textContent = dockButtons[i] ? dockButtons[i].textContent : '';
+    railNow.textContent = ('0' + (i + 1)).slice(-2);
+  }
+  // Clicking an app in the dock scrolls the page to that project's stop
+  dockButtons.forEach(function (btn, i) {
+    btn.addEventListener('click', function () {
+      var r = rail.getBoundingClientRect();
+      var travel = r.height - window.innerHeight;
+      window.scrollTo({ top: r.top + window.scrollY + travel * (i / (railCount - 1)), behavior: reduced ? 'auto' : 'smooth' });
     });
-    document.addEventListener('mousemove', function (e) { shot.tx = e.clientX; shot.ty = e.clientY; });
+  });
+  // On small screens nothing is pinned, so the screen follows whichever project is in view
+  if ('IntersectionObserver' in window && railTrack) {
+    var appWatch = new IntersectionObserver(function (entries) {
+      if (wide()) return;
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) showApp(Array.prototype.indexOf.call(railTrack.children, entry.target));
+      });
+    }, { rootMargin: '-45% 0px -45% 0px' });
+    Array.prototype.forEach.call(railTrack.children, function (el) { appWatch.observe(el); });
   }
 
   (function motion() {
@@ -349,20 +387,17 @@
         var r = rail.getBoundingClientRect();
         var travel = r.height - vh;
         var t = travel > 0 ? Math.max(0, Math.min(1, -r.top / travel)) : 0;
-        var distance = railTrack.scrollWidth - window.innerWidth;
-        railTrack.style.transform = 'translate3d(' + (-t * distance).toFixed(1) + 'px,0,0)';
+        var distance = railTrack.scrollWidth - railTrack.parentNode.clientWidth;
+        // Rest on each project, then glide to the next, instead of sliding the whole time
+        var along = t * (railCount - 1), whole = Math.min(railCount - 2, Math.floor(along));
+        var part = Math.max(0, Math.min(1, (along - whole - 0.3) / 0.4));
+        var eased = (whole + part * part * (3 - 2 * part)) / (railCount - 1);
+        railTrack.style.transform = 'translate3d(' + (-eased * distance).toFixed(1) + 'px,0,0)';
         rail.style.setProperty('--rail', t.toFixed(4));
-        var now = Math.min(railCount, Math.floor(t * railCount + 0.5) + 1);
-        railNow.textContent = ('0' + Math.min(railCount, Math.max(1, now))).slice(-2);
+        showApp(Math.round(t * (railCount - 1)));
       } else if (railTrack) {
         railTrack.style.transform = '';
       }
-
-      // Peek: trails the pointer and tilts with its speed
-      var dx = shot.tx - shot.x;
-      shot.x += dx * 0.14;
-      shot.y += (shot.ty - shot.y) * 0.14;
-      shotEl.style.transform = 'translate3d(' + shot.x.toFixed(1) + 'px,' + shot.y.toFixed(1) + 'px,0) rotate(' + Math.max(-8, Math.min(8, dx * 0.05)).toFixed(2) + 'deg)';
     }
     requestAnimationFrame(motion);
   })();
@@ -404,7 +439,7 @@
       var rate = direction * (1 + Math.min(7, Math.abs(speed) * 0.09));
       strips.forEach(function (strip) {
         var anims = strip.getAnimations ? strip.getAnimations() : [];
-        if (anims[0]) anims[0].playbackRate = rate;
+        if (anims[0]) anims[0].playbackRate = strip.parentNode.hasAttribute('data-reverse') ? -rate : rate;
       });
       requestAnimationFrame(feel);
     })();
@@ -531,6 +566,30 @@
       mcpStats.textContent = data.calls + ' question' + (data.calls === 1 ? '' : 's') + ' answered so far' + (apps ? ' · asked from ' + apps : '');
     }).catch(function () {});
   }
+
+  // Tracking consent: shown until answered, and again from the footer link
+  var consentBox = document.getElementById('consent');
+  function showConsent() {
+    consentBox.hidden = false;
+    requestAnimationFrame(function () { consentBox.classList.add('is-on'); });
+  }
+  consentBox.querySelectorAll('[data-consent]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      consent = btn.getAttribute('data-consent');
+      try { localStorage.setItem('consent', consent); } catch (e) { /* private mode */ }
+      if (consent === 'yes') {
+        waiting.forEach(function (data) {
+          if (navigator.sendBeacon) navigator.sendBeacon('/api/track', data);
+          else fetch('/api/track', { method: 'POST', body: data, keepalive: true });
+        });
+      }
+      waiting = [];
+      consentBox.classList.remove('is-on');
+      setTimeout(function () { consentBox.hidden = true; }, 800);
+    });
+  });
+  document.getElementById('consent-open').addEventListener('click', showConsent);
+  if (consent !== 'yes' && consent !== 'no') setTimeout(showConsent, 2600);
 
   document.getElementById('year').textContent = new Date().getFullYear();
 })();
