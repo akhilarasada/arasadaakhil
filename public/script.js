@@ -238,6 +238,135 @@
     })();
   }
 
+  /* ---------- page-wide motion ---------- */
+  var docEl = document.documentElement;
+  var finePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  var wide = function () { return window.innerWidth > 900; };
+
+  // Local time in Hyderabad, in the hero
+  var clockEl = document.getElementById('clock');
+  if (clockEl) {
+    var tick = function () {
+      try {
+        clockEl.textContent = new Date().toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' });
+      } catch (e) { /* older browsers keep the dashes */ }
+    };
+    tick();
+    setInterval(tick, 20000);
+  }
+
+  // Nav links roll their text on hover
+  document.querySelectorAll('.nav__links a').forEach(function (a) {
+    var text = a.textContent;
+    a.innerHTML = '<span class="roll"><span data-text="' + text + '">' + text + '</span></span>';
+  });
+
+  // The big name at the foot rises letter by letter
+  document.querySelectorAll('[data-letters]').forEach(function (el) {
+    var text = el.textContent;
+    el.textContent = '';
+    text.split('').forEach(function (ch, i) {
+      var span = document.createElement('span');
+      span.className = 'ch';
+      span.textContent = ch === ' ' ? '\u00a0' : ch;
+      span.style.transitionDelay = (i * 0.035) + 's';
+      el.appendChild(span);
+    });
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(function (entries, obs) {
+        if (entries[0].isIntersecting) { el.classList.add('in'); obs.disconnect(); }
+      }, { threshold: 0.3 }).observe(el);
+    } else {
+      el.classList.add('in');
+    }
+  });
+
+  // Buttons lean toward the pointer when it is close
+  if (finePointer && !reduced) {
+    document.querySelectorAll('.btn, .link-btn, .nav__invert, .nav__cta').forEach(function (el) {
+      el.setAttribute('data-magnetic', '');
+      el.addEventListener('mousemove', function (e) {
+        var r = el.getBoundingClientRect();
+        el.style.setProperty('--mx', ((e.clientX - (r.left + r.width / 2)) * 0.28).toFixed(1) + 'px');
+        el.style.setProperty('--my', ((e.clientY - (r.top + r.height / 2)) * 0.36).toFixed(1) + 'px');
+      });
+      el.addEventListener('mouseleave', function () {
+        el.style.setProperty('--mx', '0px');
+        el.style.setProperty('--my', '0px');
+      });
+    });
+  }
+
+  // Hero depth: the portrait drifts against the pointer and swells as you scroll away
+  var heroEl = document.querySelector('.hero');
+  var depth = { x: 0, y: 0, tx: 0, ty: 0 };
+  if (finePointer && !reduced) {
+    heroEl.addEventListener('mousemove', function (e) {
+      depth.tx = (e.clientX / window.innerWidth - 0.5) * -26;
+      depth.ty = (e.clientY / window.innerHeight - 0.5) * -18;
+    });
+    heroEl.addEventListener('mouseleave', function () { depth.tx = 0; depth.ty = 0; });
+  }
+
+  // Work rail: vertical scroll is turned into sideways travel while the section is pinned
+  var rail = document.querySelector('.rail');
+  var railTrack = document.querySelector('.rail__track');
+  var railNow = document.getElementById('rail-now');
+  var railCount = railTrack ? railTrack.children.length : 0;
+
+  // Screenshot that trails the pointer over freelance projects
+  var shotEl = document.querySelector('.peek');
+  var shotImg = shotEl.querySelector('img');
+  var shot = { x: 0, y: 0, tx: 0, ty: 0 };
+  if (finePointer) {
+    document.querySelectorAll('[data-peek]').forEach(function (row) {
+      var src = row.getAttribute('data-peek');
+      new Image().src = src;   // warm the cache so the first hover is instant
+      row.addEventListener('mouseenter', function () { shotImg.src = src; shotEl.classList.add('is-on'); });
+      row.addEventListener('mouseleave', function () { shotEl.classList.remove('is-on'); });
+    });
+    document.addEventListener('mousemove', function (e) { shot.tx = e.clientX; shot.ty = e.clientY; });
+  }
+
+  (function motion() {
+    var y = window.scrollY, vh = window.innerHeight;
+    var full = docEl.scrollHeight - vh;
+    docEl.style.setProperty('--progress', full > 0 ? Math.min(1, y / full).toFixed(4) : '0');
+
+    if (!reduced) {
+      // Hero
+      depth.x += (depth.tx - depth.x) * 0.07;
+      depth.y += (depth.ty - depth.y) * 0.07;
+      var out = Math.min(1, y / vh);
+      heroEl.style.setProperty('--px', depth.x.toFixed(2) + 'px');
+      heroEl.style.setProperty('--py', (depth.y + out * 60).toFixed(2) + 'px');
+      heroEl.style.setProperty('--ps', (1 + out * 0.14).toFixed(4));
+      heroEl.style.setProperty('--bx', (depth.x * -0.6).toFixed(2) + 'px');
+      heroEl.style.setProperty('--by', (depth.y * -0.6).toFixed(2) + 'px');
+
+      // Rail
+      if (rail && wide()) {
+        var r = rail.getBoundingClientRect();
+        var travel = r.height - vh;
+        var t = travel > 0 ? Math.max(0, Math.min(1, -r.top / travel)) : 0;
+        var distance = railTrack.scrollWidth - window.innerWidth;
+        railTrack.style.transform = 'translate3d(' + (-t * distance).toFixed(1) + 'px,0,0)';
+        rail.style.setProperty('--rail', t.toFixed(4));
+        var now = Math.min(railCount, Math.floor(t * railCount + 0.5) + 1);
+        railNow.textContent = ('0' + Math.min(railCount, Math.max(1, now))).slice(-2);
+      } else if (railTrack) {
+        railTrack.style.transform = '';
+      }
+
+      // Peek: trails the pointer and tilts with its speed
+      var dx = shot.tx - shot.x;
+      shot.x += dx * 0.14;
+      shot.y += (shot.ty - shot.y) * 0.14;
+      shotEl.style.transform = 'translate3d(' + shot.x.toFixed(1) + 'px,' + shot.y.toFixed(1) + 'px,0) rotate(' + Math.max(-8, Math.min(8, dx * 0.05)).toFixed(2) + 'deg)';
+    }
+    requestAnimationFrame(motion);
+  })();
+
   // Invert: flips the whole site to its negative, flooding out from where you clicked
   var invertBtn = document.getElementById('invert');
   var rootEl = document.documentElement;

@@ -613,7 +613,8 @@ a { color: inherit; text-decoration: none; }
   bottom: 0;
   z-index: 1;
   width: min(66vw, 112vh);
-  transform: translateX(-46%);
+  transform: translateX(-46%) translate3d(var(--px, 0px), var(--py, 0px), 0) scale(var(--ps, 1));
+  transform-origin: 50% 80%;
   mix-blend-mode: multiply;
   pointer-events: none;
 }
@@ -1215,6 +1216,163 @@ html[data-invert] .paper__sheet img { filter: invert(1) hue-rotate(180deg); }
   will-change: transform;
 }
 
+/* ---------- Scroll progress ---------- */
+.progress {
+  position: fixed;
+  top: 0; left: 0;
+  z-index: 60;
+  width: 100%;
+  height: 3px;
+  background: var(--red);
+  transform: scaleX(var(--progress, 0));
+  transform-origin: left;
+  pointer-events: none;
+}
+
+/* ---------- Hero depth ---------- */
+.hero__badge { translate: var(--bx, 0px) var(--by, 0px); }
+
+/* ---------- Nav links roll on hover ---------- */
+.roll { display: inline-block; overflow: hidden; vertical-align: top; line-height: 1.3; }
+.roll > span { position: relative; display: block; transition: transform 0.5s var(--ease); }
+.roll > span::after { content: attr(data-text); position: absolute; left: 0; top: 100%; }
+a:hover > .roll > span { transform: translateY(-100%); }
+
+/* ---------- Magnetic buttons ---------- */
+[data-magnetic] { translate: var(--mx, 0px) var(--my, 0px); transition: translate 0.5s var(--ease), background 0.3s, color 0.3s; }
+
+/* ---------- Work rail: the page pins and the projects travel sideways ---------- */
+.rail { height: 320vh; }
+.rail__pin { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; display: flex; flex-direction: column; justify-content: center; }
+.rail__track { display: flex; width: max-content; will-change: transform; }
+.rail .project {
+  flex: 0 0 100vw;
+  width: 100vw;
+  align-items: center;
+  border-top: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+.rail .project__visual { max-height: 62vh; width: 100%; aspect-ratio: auto; height: 62vh; }
+.rail .project--flip .project__visual { order: 0; }
+.rail__meter {
+  position: absolute;
+  left: var(--pad); right: var(--pad);
+  bottom: 22px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.rail__meter b { color: var(--ink); font-weight: 600; }
+.rail__meter i { flex: 1; height: 1px; background: var(--line); }
+.rail__meter u { display: block; height: 3px; margin-top: -1px; background: var(--red); transform: scaleX(var(--rail, 0)); transform-origin: left; }
+
+/* ---------- Freelance rows ---------- */
+.fl-rows { margin: 12px var(--pad) 0; border-top: 1px solid var(--line); }
+.fl-rows li { border-bottom: 1px solid var(--line); }
+.fl-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 48px 1.1fr 1.5fr auto 28px;
+  gap: 20px;
+  align-items: center;
+  padding: clamp(18px, 2.2vw, 30px) 0;
+  transition: padding 0.5s var(--ease), color 0.4s;
+}
+/* A black sheet rises behind the row on hover */
+.fl-row::before {
+  content: "";
+  position: absolute;
+  inset: 0 calc(var(--pad) * -1);
+  background: var(--ink);
+  transform: scaleY(0);
+  transform-origin: bottom;
+  transition: transform 0.5s var(--ease);
+  z-index: -1;
+}
+.fl-row:hover { color: var(--bg); padding-left: 14px; }
+.fl-row:hover::before { transform: scaleY(1); }
+.fl-row__no { font-size: 12px; letter-spacing: 0.08em; color: var(--muted); }
+.fl-row h3 { font-family: var(--display); font-weight: 500; font-size: clamp(26px, 3.4vw, 54px); line-height: 1; letter-spacing: -0.03em; }
+.fl-row p { color: var(--muted); font-size: 14px; max-width: 44em; transition: color 0.4s; }
+.fl-row:hover p, .fl-row:hover .fl-row__no { color: var(--stone); }
+.fl-row .tag { justify-self: end; white-space: nowrap; }
+.fl-row__go { font-size: 22px; transition: transform 0.4s var(--ease); }
+.fl-row:hover .fl-row__go { transform: translate(4px, -4px); }
+.fl-rows li { position: relative; z-index: 0; }
+
+/* The screenshot that follows the pointer over a project */
+.peek {
+  position: fixed;
+  top: 0; left: 0;
+  z-index: 120;
+  width: clamp(260px, 26vw, 420px);
+  aspect-ratio: 16 / 10;
+  margin: -12% 0 0 36px;
+  overflow: hidden;
+  background: var(--panel);
+  box-shadow: 0 30px 70px rgba(10, 10, 10, 0.3);
+  pointer-events: none;
+  opacity: 0;
+  clip-path: inset(50% 0 50% 0);
+  transition: opacity 0.3s, clip-path 0.55s var(--ease);
+}
+.peek.is-on { opacity: 1; clip-path: inset(0 0 0 0); }
+.peek img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; scale: 1.12; transition: scale 0.9s var(--ease); }
+.peek.is-on img { scale: 1; }
+html[data-invert] .peek { filter: invert(1) hue-rotate(180deg); }
+
+/* ---------- Skill cards fill on hover ---------- */
+.skill { position: relative; z-index: 0; transition: color 0.4s, opacity 0.9s var(--ease), transform 0.9s var(--ease); }
+.skill::before { content: ""; position: absolute; inset: 0; background: var(--ink); transform: scaleY(0); transform-origin: bottom; transition: transform 0.5s var(--ease); z-index: -1; }
+.skill:hover { color: var(--bg); }
+.skill:hover::before { transform: scaleY(1); }
+.skill:hover p { color: var(--stone); }
+
+/* ---------- The name, very large, at the foot ---------- */
+.bigname {
+  margin: clamp(60px, 9vw, 130px) 0 0;
+  font-family: var(--display);
+  font-weight: 500;
+  font-size: 13.4vw;
+  line-height: 0.82;
+  letter-spacing: -0.045em;
+  white-space: nowrap;
+  overflow: hidden;
+  padding-bottom: 0.08em;
+}
+.bigname .ch { display: inline-block; transform: translateY(105%); transition: transform 1.1s var(--ease); }
+.bigname.in .ch { transform: none; }
+.bigname .ch:hover { color: var(--red); }
+.contact .footer { margin-top: 22px; }
+
+@media (max-width: 900px) {
+  /* No pinning on small screens: the projects simply stack */
+  .rail { height: auto; }
+  .rail__pin { position: static; height: auto; overflow: visible; display: block; }
+  .rail__track { display: block; width: auto; transform: none !important; }
+  .rail .project { width: auto; padding: clamp(24px, 3vw, 40px) var(--pad); border-top: 1px solid var(--line); }
+  .rail .project__visual { height: auto; max-height: none; aspect-ratio: 4 / 3; }
+  .rail__meter { display: none; }
+  .fl-row { grid-template-columns: 34px 1fr 24px; gap: 8px 12px; }
+  .fl-row p { grid-column: 2; }
+  .fl-row .tag { grid-column: 2; justify-self: start; }
+  .fl-row__go { grid-row: 1; grid-column: 3; }
+  .peek { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rail { height: auto; }
+  .rail__pin { position: static; height: auto; overflow: visible; display: block; }
+  .rail__track { display: block; width: auto; transform: none !important; }
+  .rail .project { width: auto; padding: clamp(24px, 3vw, 40px) var(--pad); }
+  .rail__meter { display: none; }
+  .bigname .ch { transform: none; }
+}
+
 /* ---------- Certificates ---------- */
 .certs li { padding: 0; }
 .cert {
@@ -1359,7 +1517,7 @@ html[data-invert] .paper__sheet img { filter: invert(1) hue-rotate(180deg); }
 .cursor.is-down .cursor__shape { width: 7px; height: 7px; }
 
 @media (max-width: 900px) {
-  .hero__portrait { width: min(96vw, 80vh); transform: translateX(-50%); bottom: 16vh; }
+  .hero__portrait { width: min(96vw, 80vh); transform: translateX(-50%) translate3d(var(--px, 0px), var(--py, 0px), 0) scale(var(--ps, 1)); bottom: 16vh; }
   .hero__portrait img {
     -webkit-mask-image: radial-gradient(ellipse 54% 70% at 50% 52%, #000 48%, transparent 100%), linear-gradient(to bottom, transparent 0%, #000 26%, #000 68%, transparent 98%);
     mask-image: radial-gradient(ellipse 54% 70% at 50% 52%, #000 48%, transparent 100%), linear-gradient(to bottom, transparent 0%, #000 26%, #000 68%, transparent 98%);
