@@ -366,12 +366,106 @@
     Array.prototype.forEach.call(railTrack.children, function (el) { appWatch.observe(el); });
   }
 
+  // About: how far through its pinned scroll we are drives the red flood
+  var aboutEl = document.querySelector('.about2');
+
+  // Stack: skills are physical pills that fall into a pile and can be picked up and thrown
+  var pileEl = document.getElementById('pile');
+  var pile = null;
+  function buildPile() {
+    var M = window.Matter;
+    if (!M || !pileEl || reduced) return;
+    var pills = Array.prototype.slice.call(pileEl.querySelectorAll('.pill'));
+    // Measure while they are still laid out normally
+    var sizes = pills.map(function (el) { return { w: el.offsetWidth, h: el.offsetHeight }; });
+    var W = pileEl.clientWidth, H = pileEl.clientHeight;
+    pileEl.classList.add('is-live');
+
+    var engine = M.Engine.create();
+    engine.gravity.y = 1.1;
+    var wall = { isStatic: true, friction: 0.6 };
+    M.Composite.add(engine.world, [
+      M.Bodies.rectangle(W / 2, H + 50, W + 400, 100, wall),
+      M.Bodies.rectangle(-50, H / 2 - 600, 100, H + 2400, wall),
+      M.Bodies.rectangle(W + 50, H / 2 - 600, 100, H + 2400, wall)
+    ]);
+    var bodies = pills.map(function (el, i) {
+      var s = sizes[i];
+      var body = M.Bodies.rectangle(
+        s.w / 2 + 20 + Math.random() * Math.max(1, W - s.w - 40),
+        -80 - i * 62,
+        s.w, s.h,
+        { chamfer: { radius: s.h / 2 - 1 }, restitution: 0.35, friction: 0.5, frictionAir: 0.012, angle: (Math.random() - 0.5) * 0.9 }
+      );
+      return body;
+    });
+    M.Composite.add(engine.world, bodies);
+
+    // Dragging with a mouse; touch and the wheel are left alone so the page still scrolls
+    var mouse = M.Mouse.create(pileEl);
+    ['wheel', 'mousewheel', 'DOMMouseScroll'].forEach(function (type) { pileEl.removeEventListener(type, mouse.mousewheel); });
+    ['touchstart', 'touchmove', 'touchend'].forEach(function (type) {
+      pileEl.removeEventListener(type, mouse.mousedown);
+      pileEl.removeEventListener(type, mouse.mousemove);
+      pileEl.removeEventListener(type, mouse.mouseup);
+    });
+    M.Composite.add(engine.world, M.MouseConstraint.create(engine, { mouse: mouse, constraint: { stiffness: 0.18, damping: 0.1 } }));
+
+    pile = { M: M, engine: engine, bodies: bodies, pills: pills, sizes: sizes, visible: true };
+  }
+  if (pileEl && 'IntersectionObserver' in window) {
+    new IntersectionObserver(function (entries) {
+      var inView = entries[0].isIntersecting;
+      if (inView && !pile) buildPile();
+      if (pile) pile.visible = inView;
+    }, { threshold: 0.15 }).observe(pileEl);
+  }
+  // A change of width would leave the walls in the wrong place, so start the pile again
+  var pileResize;
+  window.addEventListener('resize', function () {
+    if (!pile) return;
+    clearTimeout(pileResize);
+    pileResize = setTimeout(function () {
+      pile.pills.forEach(function (el) { el.style.transform = ''; });
+      pileEl.classList.remove('is-live');
+      pile = null;
+      buildPile();
+    }, 300);
+  });
+  var pileLastY = window.scrollY;
+
   (function motion() {
     var y = window.scrollY, vh = window.innerHeight;
     var full = docEl.scrollHeight - vh;
     docEl.style.setProperty('--progress', full > 0 ? Math.min(1, y / full).toFixed(4) : '0');
 
     if (!reduced) {
+      // About flood
+      if (aboutEl) {
+        var ab = aboutEl.querySelector('.about2__scroll').getBoundingClientRect();
+        var span = ab.height - vh;
+        var at = span > 0 ? Math.max(0, Math.min(1, -ab.top / span)) : 0;
+        var af = Math.max(0, Math.min(1, (at - 0.22) / 0.5));
+        aboutEl.style.setProperty('--t', at.toFixed(4));
+        aboutEl.style.setProperty('--f', (af * af * (3 - 2 * af)).toFixed(4));
+      }
+
+      // Pile: step the physics, and let a hard scroll jolt the pills
+      if (pile && pile.visible) {
+        var jolt = y - pileLastY;
+        if (Math.abs(jolt) > 26) {
+          pile.bodies.forEach(function (b) {
+            pile.M.Body.applyForce(b, b.position, { x: (Math.random() - 0.5) * 0.02 * b.mass, y: -Math.min(0.05, Math.abs(jolt) * 0.0009) * b.mass });
+          });
+        }
+        pile.M.Engine.update(pile.engine, 1000 / 60);
+        for (var pi = 0; pi < pile.bodies.length; pi++) {
+          var pb = pile.bodies[pi], ps = pile.sizes[pi];
+          pile.pills[pi].style.transform = 'translate3d(' + (pb.position.x - ps.w / 2).toFixed(1) + 'px,' + (pb.position.y - ps.h / 2).toFixed(1) + 'px,0) rotate(' + pb.angle.toFixed(3) + 'rad)';
+        }
+      }
+      pileLastY = y;
+
       // Hero
       depth.x += (depth.tx - depth.x) * 0.07;
       depth.y += (depth.ty - depth.y) * 0.07;

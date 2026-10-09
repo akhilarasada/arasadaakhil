@@ -50,7 +50,7 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230a0a0a'/%3E%3Crect x='10' y='10' width='12' height='12' fill='%23d12424'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=Funnel+Display:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=Funnel+Display:wght@400;500;600&family=Instrument+Serif:ital@1&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
   <script>
     // One address for visitors and Google: send workers.dev and www traffic to the main domain
@@ -136,72 +136,115 @@
       </div>
     </section>
 
-    <!-- Intro -->
-    <section class="intro" id="about">
-      <div class="intro__side">
-        <span class="label">(About me)</span>
-        <span class="intro__mark" aria-hidden="true"></span>
+    <!-- About: a statement, then the page floods red and shows the numbers -->
+    <section class="about2" id="about">
+      <div class="about2__scroll">
+      <div class="about2__pin">
+        <div class="about2__statement">
+          <p class="label">(About me)</p>
+          <h2 class="state" aria-label="I ship software businesses run on">
+            <span class="state__a" aria-hidden="true">I ship</span>
+            <em aria-hidden="true">software</em>
+            <span class="state__b" aria-hidden="true">businesses run on</span>
+          </h2>
+          <p class="label about2__hint">Keep scrolling ↓</p>
+        </div>
+
+        <div class="flood">
+          <svg class="flood__wave" viewBox="0 0 2880 120" preserveAspectRatio="none" aria-hidden="true">
+            <path class="flood__wave-back" d="M0 70 C120 20 240 20 360 70 S600 120 720 70 S960 20 1080 70 S1320 120 1440 70 S1680 20 1800 70 S2040 120 2160 70 S2400 20 2520 70 S2760 120 2880 70 V120 H0 Z"/>
+            <path d="M0 80 C90 40 270 120 360 80 S630 40 720 80 S990 120 1080 80 S1350 40 1440 80 S1710 120 1800 80 S2070 40 2160 80 S2430 120 2520 80 S2790 40 2880 80 V120 H0 Z"/>
+          </svg>
+          <div class="flood__clip">
+            <div class="flood__inner">
+              <div class="flood__copy">
+                <p class="label">(Hi, I'm Akhil)</p>
+                <p class="flood__text">I lead the build of RevalERP, a SaaS POS and ERP platform, and our E-commerce platform at Revalsys: planning sprints, unblocking the team and shipping to production. After hours I build websites, CMS platforms and HRMS tools for clients.</p>
+              </div>
+              <ul class="flood__stats">
+                <li><b data-count="25">25</b><span>ERP modules led. Each one a business running on it.</span></li>
+                <li><b data-count="40">40</b><span>Freelance builds shipped, start to finish.</span></li>
+                <li><b data-count="5">5</b><span>Certifications earned.</span></li>
+                <li><b data-count="3">3</b><span>Companies, since 2023.</span></li>
+              </ul>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div class="intro__main">
-        <p class="intro__text" data-words>
-          Hi, I'm Akhil. I lead the build of <em>RevalERP</em>, a SaaS POS and ERP platform, and our <em>E-commerce</em> platform: planning sprints, unblocking the team and shipping to production. After hours, I build <em>websites, CMS platforms and HRMS tools</em> for clients.
-        </p>
+      </div>
 
-        <ul class="stats">
-          <li class="stat reveal"><b data-count="25">25</b><span>ERP modules<br>led at Revalsys</span></li>
-          <li class="stat reveal"><b data-count="40">40</b><span>Freelance<br>builds shipped</span></li>
-          <li class="stat reveal"><b data-count="5">5</b><span>Certifications<br>earned</span></li>
-          <li class="stat reveal"><b data-count="3">3</b><span>Companies,<br>since 2023</span></li>
-        </ul>
-        <div class="duo reveal">
-          <article class="duo__half duo__half--day">
-            <i class="duo__icon" aria-hidden="true"></i>
-            <span class="label">(By day)</span>
-            <h3>Team lead</h3>
-            <p>Lead .NET Developer at Revalsys Technologies, Hyderabad.</p>
-            <ul>
-              <li>RevalERP and the E-commerce platform</li>
-              <li>25+ ERP modules across HRMS, Finance, POS and more</li>
-              <li>Sprint planning, reviews and production releases</li>
-            </ul>
-          </article>
-          <article class="duo__half duo__half--night">
-            <i class="duo__icon" aria-hidden="true"></i>
-            <span class="label">(By night)</span>
-            <h3>Freelance builder</h3>
-            <p>Websites and tools for clients, built end to end.</p>
-            <ul>
-              <li>CMS websites live in five days</li>
-              <li>HRMS and hiring tools</li>
-              <li>40+ builds shipped</li>
-            </ul>
-          </article>
-        </div>
+      <div class="about2__after">
+      <div class="duo reveal">
+        <article class="duo__half duo__half--day">
+          <i class="duo__icon" aria-hidden="true"></i>
+          <span class="label">(By day)</span>
+          <h3>Team lead</h3>
+          <p>Lead .NET Developer at Revalsys Technologies, Hyderabad.</p>
+          <ul>
+            <li>RevalERP and the E-commerce platform</li>
+            <li>25+ ERP modules across HRMS, Finance, POS and more</li>
+            <li>Sprint planning, reviews and production releases</li>
+          </ul>
+        </article>
+        <article class="duo__half duo__half--night">
+          <i class="duo__icon" aria-hidden="true"></i>
+          <span class="label">(By night)</span>
+          <h3>Freelance builder</h3>
+          <p>Websites and tools for clients, built end to end.</p>
+          <ul>
+            <li>CMS websites live in five days</li>
+            <li>HRMS and hiring tools</li>
+            <li>40+ builds shipped</li>
+          </ul>
+        </article>
+      </div>
       </div>
     </section>
 
-    <!-- Marquee -->
-    <section class="marquee" aria-label="Tools and practices">
-      <div class="marquee__head">
-        <p class="label">(Stack &amp; Practice)</p>
-        <p class="marquee__hint label">Scroll to change its speed and direction</p>
+    <!-- Stack: a pile of skills you can pick up and throw -->
+    <section class="stack" id="stack" aria-label="Tools and practices">
+      <div class="section-head">
+        <h2 class="reveal">Stack &amp; Practice</h2>
+        <span class="label">(Pick one up and throw it)</span>
       </div>
-      <div class="marquee__track">
-        <b class="marquee__tag">Backend</b>
-        <div class="marquee__inner"><span>.NET Core</span><i></i><span>C#</span><i></i><span>ASP.NET Core Web API</span><i></i><span>Entity Framework Core</span><i></i><span>ASP.NET MVC</span><i></i><span>REST APIs</span><i></i><span>Microservices</span><i></i><span>SignalR</span><i></i><span>Background Jobs</span><i></i></div>
-        <div class="marquee__inner" aria-hidden="true"><span>.NET Core</span><i></i><span>C#</span><i></i><span>ASP.NET Core Web API</span><i></i><span>Entity Framework Core</span><i></i><span>ASP.NET MVC</span><i></i><span>REST APIs</span><i></i><span>Microservices</span><i></i><span>SignalR</span><i></i><span>Background Jobs</span><i></i></div>
+      <div class="pile" id="pile">
+        <span class="pill pill--a">.NET Core</span>
+        <span class="pill pill--a">C#</span>
+        <span class="pill pill--a">ASP.NET Core Web API</span>
+        <span class="pill pill--a">Entity Framework Core</span>
+        <span class="pill pill--a">ASP.NET MVC</span>
+        <span class="pill pill--a">REST APIs</span>
+        <span class="pill pill--a">Microservices</span>
+        <span class="pill pill--a">SignalR</span>
+        <span class="pill pill--b">MS SQL Server</span>
+        <span class="pill pill--b">PostgreSQL</span>
+        <span class="pill pill--b">MongoDB</span>
+        <span class="pill pill--b">Query Optimization</span>
+        <span class="pill pill--b">Azure</span>
+        <span class="pill pill--b">Azure DevOps</span>
+        <span class="pill pill--b">CI/CD</span>
+        <span class="pill pill--b">AWS</span>
+        <span class="pill pill--c">ReactJS</span>
+        <span class="pill pill--c">NextJs</span>
+        <span class="pill pill--c">Angular</span>
+        <span class="pill pill--c">JavaScript</span>
+        <span class="pill pill--c">HTML5</span>
+        <span class="pill pill--c">CSS3</span>
+        <span class="pill pill--d">Agile / Scrum</span>
+        <span class="pill pill--d">Sprint Planning</span>
+        <span class="pill pill--d">Code Reviews</span>
+        <span class="pill pill--d">Git</span>
+        <span class="pill pill--d">Swagger</span>
+        <span class="pill pill--d">Python</span>
+        <span class="pill pill--d">Unity</span>
       </div>
-      <div class="marquee__track marquee__track--outline" data-reverse="">
-        <b class="marquee__tag">Data &amp; Cloud</b>
-        <div class="marquee__inner"><span>MS SQL Server</span><i></i><span>PostgreSQL</span><i></i><span>MongoDB</span><i></i><span>Stored Procedures</span><i></i><span>Query Optimization</span><i></i><span>Azure</span><i></i><span>Azure DevOps</span><i></i><span>CI/CD</span><i></i><span>AWS</span><i></i></div>
-        <div class="marquee__inner" aria-hidden="true"><span>MS SQL Server</span><i></i><span>PostgreSQL</span><i></i><span>MongoDB</span><i></i><span>Stored Procedures</span><i></i><span>Query Optimization</span><i></i><span>Azure</span><i></i><span>Azure DevOps</span><i></i><span>CI/CD</span><i></i><span>AWS</span><i></i></div>
-      </div>
-      <div class="marquee__track">
-        <b class="marquee__tag">Frontend &amp; Practice</b>
-        <div class="marquee__inner"><span>ReactJS</span><i></i><span>NextJs</span><i></i><span>Angular</span><i></i><span>JavaScript</span><i></i><span>HTML5</span><i></i><span>CSS3</span><i></i><span>Git</span><i></i><span>Swagger</span><i></i><span>Agile / Scrum</span><i></i><span>Python</span><i></i><span>Unity</span><i></i></div>
-        <div class="marquee__inner" aria-hidden="true"><span>ReactJS</span><i></i><span>NextJs</span><i></i><span>Angular</span><i></i><span>JavaScript</span><i></i><span>HTML5</span><i></i><span>CSS3</span><i></i><span>Git</span><i></i><span>Swagger</span><i></i><span>Agile / Scrum</span><i></i><span>Python</span><i></i><span>Unity</span><i></i></div>
-      </div>
+      <ul class="pile__legend label">
+        <li><i class="pill--a"></i>Backend</li>
+        <li><i class="pill--b"></i>Data &amp; Cloud</li>
+        <li><i class="pill--c"></i>Frontend</li>
+        <li><i class="pill--d"></i>Practice &amp; tools</li>
+      </ul>
     </section>
 
     <!-- Work -->
@@ -741,6 +784,7 @@
     </div>
   </div>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.20.0/matter.min.js"></script>
   <script src="liquid.js"></script>
   <script src="script.js"></script>
 </body>
