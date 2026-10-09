@@ -7,7 +7,19 @@ const esc = value => String(value == null ? '' : value).replace(/[&<>"']/g, c =>
 const fmt = n => Number(n || 0).toLocaleString('en-IN');
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const shortDay = day => Number(day.slice(8)) + ' ' + MONTHS[Number(day.slice(5, 7)) - 1];
+const clock = seconds => Math.floor(seconds / 60) + ':' + String(Math.round(seconds % 60)).padStart(2, '0');
+const hourLabel = h => (h % 12 || 12) + (h < 12 ? 'am' : 'pm');
+
+// Cloudflare reports countries as two-letter codes; show the full name
+const regionNames = new Intl.DisplayNames(['en'], { type: 'region' });
+function countryName(code) {
+  try { return /^[A-Z]{2}$/.test(code) ? regionNames.of(code) : (code || 'Unknown'); } catch (e) { return code; }
+}
+
+// The order the sections appear on the page, for the "how far people got" chart
+const SECTION_ORDER = ['About', 'Work', 'Freelance', 'Experience', 'Skillset', 'Resume', 'MCP', 'Projects offer', 'Contact'];
 
 const STYLE = `
   :root { --bg:#efeeeb; --ink:#0a0a0a; --muted:#6b6862; --line:rgba(10,10,10,.14); --card:#f7f6f3; --red:#d12424; --stone:#ccc9c4;
@@ -15,22 +27,30 @@ const STYLE = `
   * { box-sizing:border-box; }
   body { margin:0; background:var(--bg); color:var(--ink); font-family:var(--body); font-size:15px; line-height:1.45; -webkit-font-smoothing:antialiased; }
   a { color:inherit; }
-  .wrap { max-width:1240px; margin:0 auto; padding:28px clamp(16px,4vw,48px) 64px; }
+  .wrap { max-width:1280px; margin:0 auto; padding:28px clamp(16px,4vw,48px) 64px; }
   header { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:flex-end; gap:16px; padding-bottom:22px; border-bottom:1px solid var(--line); }
   .brand { display:inline-flex; align-items:center; gap:6px; font:600 18px var(--display); text-decoration:none; }
   .brand i { width:9px; height:9px; background:var(--red); }
   h1 { margin:18px 0 0; font:500 clamp(40px,7vw,84px)/.95 var(--display); letter-spacing:-.04em; }
   .label { font-size:11px; letter-spacing:.09em; text-transform:uppercase; color:var(--muted); }
-  .tabs { display:flex; gap:6px; }
-  .tabs a { padding:8px 14px; border:1px solid var(--line); border-radius:999px; font-size:13px; text-decoration:none; }
+  .tabs { display:flex; flex-wrap:wrap; gap:6px; }
+  .tabs a, .pager a, .pager span { padding:8px 14px; border:1px solid var(--line); border-radius:999px; font-size:13px; text-decoration:none; }
   .tabs a.on { background:var(--ink); border-color:var(--ink); color:var(--bg); }
+  .signout:hover { background:var(--red); border-color:var(--red); color:#fff; }
+  .section-title { display:flex; align-items:baseline; gap:12px; margin:44px 0 12px; }
+  .section-title h2 { margin:0; font:500 clamp(26px,3vw,40px)/1 var(--display); letter-spacing:-.03em; }
+  .section-title i { width:9px; height:9px; background:var(--red); }
   .tiles { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-top:24px; }
   .tile, .card { background:var(--card); border:1px solid var(--line); padding:18px; }
-  .tile b { display:block; margin:14px 0 6px; font:500 clamp(36px,4.6vw,60px)/.9 var(--display); letter-spacing:-.04em; }
-  .tile small { color:var(--muted); font-size:13px; }
+  .tile b { display:block; margin:14px 0 6px; font:500 clamp(34px,4.2vw,56px)/.9 var(--display); letter-spacing:-.04em; }
+  .tile b small { font-size:.42em; letter-spacing:0; color:var(--muted); margin-left:3px; }
+  .tile > small { color:var(--muted); font-size:13px; }
+  .tile--hot { background:var(--ink); border-color:var(--ink); color:var(--bg); }
+  .tile--hot .label, .tile--hot > small { color:var(--stone); }
   .grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin-top:12px; }
+  .grid--3 { grid-template-columns:repeat(3,1fr); }
   .card--wide { grid-column:1 / -1; }
-  .card h2 { margin:0 0 4px; font:500 22px var(--display); letter-spacing:-.02em; }
+  .card h3 { margin:0 0 4px; font:500 21px var(--display); letter-spacing:-.02em; }
   .card > p { margin:0 0 16px; color:var(--muted); font-size:13px; }
   .chart { position:relative; }
   .chart svg { display:block; width:100%; height:auto; overflow:visible; }
@@ -39,27 +59,54 @@ const STYLE = `
   .chart .bar { fill:var(--ink); transition:fill .15s; }
   .chart .hit { fill:transparent; }
   .chart g.col:hover .bar { fill:var(--red); }
-  .tip { position:absolute; top:0; left:0; padding:8px 10px; background:var(--ink); color:var(--bg); font-size:12px; line-height:1.4; white-space:nowrap; pointer-events:none; opacity:0; transform:translate(-50%,-110%); transition:opacity .12s; }
+  .chart .cell { fill:var(--ink); transition:stroke .1s; stroke:transparent; stroke-width:2; }
+  .chart .cell:hover { stroke:var(--red); }
+  .chart .cell--none { fill:rgba(10,10,10,.05); }
+  .tip { position:absolute; top:0; left:0; z-index:2; padding:8px 10px; background:var(--ink); color:var(--bg); font-size:12px; line-height:1.4; white-space:nowrap; pointer-events:none; opacity:0; transform:translate(-50%,-115%); transition:opacity .12s; }
   .tip.on { opacity:1; }
   .tip b { display:block; font-weight:600; }
+  .scale { display:flex; align-items:center; gap:8px; margin-top:10px; color:var(--muted); font-size:11px; }
+  .scale i { width:120px; height:8px; background:linear-gradient(90deg, rgba(10,10,10,.08), var(--ink)); }
   .rows { list-style:none; margin:0; padding:0; }
-  .rows li { display:grid; grid-template-columns:minmax(90px,38%) 1fr auto; align-items:center; gap:12px; padding:8px 0; border-top:1px solid var(--line); }
+  .rows li { display:grid; grid-template-columns:minmax(90px,40%) 1fr auto; align-items:center; gap:12px; padding:8px 0; border-top:1px solid var(--line); }
   .rows li:first-child { border-top:0; }
   .rows .name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .rows .track { height:8px; }
   .rows .fill { display:block; height:100%; min-width:2px; background:var(--ink); border-radius:0 4px 4px 0; }
   .rows .num { font-variant-numeric:tabular-nums; font-weight:500; }
-  .empty { padding:22px 0; color:var(--muted); }
+  .rows .num small { color:var(--muted); font-weight:400; margin-left:6px; }
+  .empty { padding:18px 0; color:var(--muted); }
   table { width:100%; border-collapse:collapse; font-size:14px; }
   th { text-align:left; padding:8px 10px 8px 0; font-weight:500; font-size:11px; letter-spacing:.09em; text-transform:uppercase; color:var(--muted); }
   td { padding:9px 10px 9px 0; border-top:1px solid var(--line); white-space:nowrap; }
   .scroll { overflow-x:auto; }
+
+  .people { border-top:1px solid var(--line); }
+  .people__head, .person > summary { display:grid; grid-template-columns:22px 1.5fr 1.4fr 1.5fr 1.3fr 70px 1.1fr; gap:12px; align-items:center; }
+  .people__head { padding:8px 0; font-size:11px; letter-spacing:.09em; text-transform:uppercase; color:var(--muted); }
+  .person { border-top:1px solid var(--line); }
+  .person > summary { padding:11px 0; cursor:pointer; list-style:none; }
+  .person > summary::-webkit-details-marker { display:none; }
+  .person > summary:hover { background:rgba(10,10,10,.03); }
+  .person > summary > span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .arrow { width:22px; height:22px; display:grid; place-items:center; border:1px solid var(--line); border-radius:50%; font-size:11px; transition:transform .25s, background .2s, color .2s; }
+  .person[open] .arrow { transform:rotate(90deg); background:var(--ink); color:var(--bg); border-color:var(--ink); }
+  .ip { font-family:ui-monospace,SFMono-Regular,Consolas,monospace; font-size:13px; }
+  .count { justify-self:start; min-width:30px; padding:3px 9px; border-radius:999px; background:var(--ink); color:var(--bg); font-size:12px; font-weight:600; text-align:center; }
+  .count--many { background:var(--red); }
+  .person__body { padding:4px 0 18px 34px; }
+  .person__meta { display:flex; flex-wrap:wrap; gap:6px 22px; margin-bottom:10px; color:var(--muted); font-size:13px; }
+  .person__meta b { color:var(--ink); font-weight:500; }
+  .person__body table { font-size:13px; max-width:720px; }
+  .pager { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-top:16px; }
+  .pager span { border-color:transparent; color:var(--muted); }
+  .pager a:hover { background:var(--ink); border-color:var(--ink); color:var(--bg); }
+  .pager .off { opacity:.35; pointer-events:none; }
   footer { margin-top:28px; color:var(--muted); font-size:12px; }
+
   .msg { min-height:100vh; display:grid; place-items:center; padding:24px; text-align:center; }
   .msg h1 { margin:0 0 14px; font-size:clamp(34px,6vw,64px); }
   .msg p { max-width:34em; margin:0 auto; color:var(--muted); }
-  .signout { padding:8px 14px; border:1px solid var(--line); border-radius:999px; font-size:13px; text-decoration:none; }
-  .signout:hover { background:var(--red); border-color:var(--red); color:#fff; }
   .login { min-height:100vh; min-height:100svh; display:grid; grid-template-columns:1.1fr 1fr; }
   .login__side { display:flex; flex-direction:column; justify-content:space-between; padding:clamp(24px,4vw,56px); }
   .login__side h1 { margin:0; font-size:clamp(56px,10vw,150px); line-height:.86; }
@@ -78,8 +125,14 @@ const STYLE = `
   .login__error { margin:0 0 24px; padding:12px 14px; border:1px solid var(--red); color:#ff9a9a; font-size:14px; }
   .login__note { margin-top:28px; font-size:13px; color:var(--muted); }
   .login__back { font-size:13px; }
-  @media (max-width:900px) { .tiles { grid-template-columns:1fr 1fr; } .grid { grid-template-columns:1fr; }
-    .login { grid-template-columns:1fr; } .login__side { gap:40px; } }
+
+  @media (max-width:1000px) {
+    .tiles { grid-template-columns:1fr 1fr; } .grid, .grid--3 { grid-template-columns:1fr; }
+    .login { grid-template-columns:1fr; } .login__side { gap:40px; }
+    .people__head { display:none; }
+    .person > summary { grid-template-columns:22px 1fr auto; }
+    .person > summary > span:nth-child(n+4):not(.count) { display:none; }
+  }
 `;
 
 const HEAD = title => `<!DOCTYPE html>
@@ -124,6 +177,8 @@ export function renderLogin({ user, error }) {
 </main></body></html>`;
 }
 
+/* ---------- charts ---------- */
+
 // Single-series daily bars: one hue, thin marks rounded at the data end, hover for exact values
 function dailyChart(daily) {
   const W = 1100, H = 280, left = 40, right = 8, top = 12, bottom = 28;
@@ -154,43 +209,128 @@ function dailyChart(daily) {
     const tick = i % labelEvery === 0
       ? `<text class="axis" x="${x + barW / 2}" y="${H - 8}" text-anchor="middle">${shortDay(d.day)}</text>`
       : '';
-    cols += `<g class="col" data-x="${(x + barW / 2) / W}" data-y="${y / H}" data-day="${shortDay(d.day)}" data-visitors="${d.visitors}" data-views="${d.views}">` +
+    cols += `<g class="col" data-tip="${esc(shortDay(d.day))}|${d.visitors} visitors · ${d.views} page views" data-x="${(x + barW / 2) / W}" data-y="${y / H}">` +
       `<rect class="hit" x="${left + i * slot}" y="${top}" width="${slot}" height="${plotH}"/>${bar}</g>${tick}`;
   });
 
-  return `<div class="chart" id="daily"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Visitors per day">${grid}${cols}</svg><div class="tip"></div></div>`;
+  return `<div class="chart"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Visitors per day">${grid}${cols}</svg><div class="tip"></div></div>`;
 }
 
-// Cloudflare reports countries as two-letter codes; show the full name
-const regionNames = new Intl.DisplayNames(['en'], { type: 'region' });
-function countryName(code) {
-  try { return /^[A-Z]{2}$/.test(code) ? regionNames.of(code) : code; } catch (e) { return code; }
+// Weekday by hour heatmap: one hue from light to dark, a gap between cells, hover for the count
+function heatmap(cells) {
+  const W = 1100, left = 44, top = 6, gap = 2;
+  const cw = (W - left) / 24, ch = 26, H = top + ch * 7 + 22;
+  const grid = Array.from({ length: 7 }, () => new Array(24).fill(0));
+  let max = 0;
+  for (const c of cells) {
+    if (c.dow >= 0 && c.dow < 7 && c.hr >= 0 && c.hr < 24) { grid[c.dow][c.hr] = c.n; max = Math.max(max, c.n); }
+  }
+  // Week shown Monday first
+  const order = [1, 2, 3, 4, 5, 6, 0];
+  let out = '';
+  order.forEach((dow, row) => {
+    const y = top + row * ch;
+    out += `<text class="axis" x="${left - 8}" y="${y + ch / 2 + 4}" text-anchor="end">${WEEKDAYS[dow]}</text>`;
+    for (let h = 0; h < 24; h++) {
+      const n = grid[dow][h];
+      const x = left + h * cw;
+      const shade = n ? (0.14 + 0.86 * (n / max)).toFixed(2) : null;
+      out += `<rect class="cell${n ? '' : ' cell--none'}" x="${x + gap / 2}" y="${y + gap / 2}" width="${cw - gap}" height="${ch - gap}" rx="3"` +
+        (n ? ` fill-opacity="${shade}"` : '') +
+        ` data-tip="${WEEKDAYS[dow]} ${hourLabel(h)}|${n} page view${n === 1 ? '' : 's'}" data-x="${(x + cw / 2) / W}" data-y="${y / H}"/>`;
+    }
+  });
+  for (let h = 0; h < 24; h += 3) {
+    out += `<text class="axis" x="${left + h * cw + cw / 2}" y="${H - 6}" text-anchor="middle">${hourLabel(h)}</text>`;
+  }
+  return `<div class="chart"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Page views by weekday and hour">${out}</svg><div class="tip"></div></div>` +
+    `<div class="scale"><span>Fewer</span><i></i><span>More${max ? ` (busiest hour: ${max})` : ''}</span></div>`;
 }
 
-function rows(items, empty) {
+function rows(items, empty, total) {
   if (!items.length) return `<p class="empty">${esc(empty)}</p>`;
   const max = Math.max(...items.map(i => i.n));
   return '<ul class="rows">' + items.map(i =>
     `<li><span class="name" title="${esc(i.label)}">${esc(i.label || 'Unknown')}</span>` +
     `<span class="track"><span class="fill" style="width:${Math.max(1, (i.n / max) * 100)}%"></span></span>` +
-    `<span class="num">${fmt(i.n)}</span></li>`
+    `<span class="num">${fmt(i.n)}${total ? `<small>${Math.round((i.n / total) * 100)}%</small>` : ''}</span></li>`
   ).join('') + '</ul>';
 }
+
+/* ---------- visitors table ---------- */
+
+function people(s) {
+  if (!s.visitors.length) return '<p class="empty">Nothing recorded in this period yet.</p>';
+  const link = p => `?days=${s.days}&page=${p}#visitors`;
+
+  const list = s.visitors.map(v => {
+    const place = [v.city, countryName(v.country)].filter(Boolean).join(', ');
+    const visits = v.visits.map(x =>
+      `<tr><td>${esc(x.when)}</td><td>${esc(x.ref || 'Direct')}</td><td>${esc(x.path || '/')}</td></tr>`).join('');
+    return `<details class="person">
+      <summary>
+        <span class="arrow" aria-hidden="true">▶</span>
+        <span class="ip">${esc(v.ip || 'not recorded')}</span>
+        <span>${esc(place || 'Unknown')}</span>
+        <span title="${esc(v.org)}">${esc(v.org || '—')}</span>
+        <span>${esc([v.device, v.os, v.browser].filter(Boolean).join(' · '))}</span>
+        <span class="count${v.views > 1 ? ' count--many' : ''}" title="Page views in this period">${fmt(v.views)}×</span>
+        <span>${esc(v.lastSeen)}</span>
+      </summary>
+      <div class="person__body">
+        <div class="person__meta">
+          <span>Visited on <b>${fmt(v.days)}</b> day${v.days === 1 ? '' : 's'}</span>
+          ${v.region ? `<span>Region <b>${esc(v.region)}</b></span>` : ''}
+          ${v.screen ? `<span>Screen <b>${esc(v.screen)}</b></span>` : ''}
+          ${v.lang ? `<span>Language <b>${esc(v.lang)}</b></span>` : ''}
+          <span>Last came from <b>${esc(v.ref || 'Direct')}</b></span>
+        </div>
+        <table><thead><tr><th>When (IST)</th><th>Came from</th><th>Page</th></tr></thead><tbody>${visits}</tbody></table>
+      </div>
+    </details>`;
+  }).join('');
+
+  return `<div class="people">
+    <div class="people__head"><span></span><span>IP address</span><span>Location</span><span>Network</span><span>Device</span><span>Visits</span><span>Last seen (IST)</span></div>
+    ${list}
+  </div>
+  <nav class="pager" aria-label="Visitor pages">
+    <a class="${s.page <= 1 ? 'off' : ''}" href="${link(1)}">« First</a>
+    <a class="${s.page <= 1 ? 'off' : ''}" href="${link(s.page - 1)}">‹ Previous</a>
+    <span>Page ${s.page} of ${s.pages} · ${fmt(s.totalPeople)} visitors</span>
+    <a class="${s.page >= s.pages ? 'off' : ''}" href="${link(s.page + 1)}">Next ›</a>
+    <a class="${s.page >= s.pages ? 'off' : ''}" href="${link(s.pages)}">Last »</a>
+  </nav>`;
+}
+
+/* ---------- page ---------- */
 
 export function renderDashboard(s) {
   const sum = (list, key) => list.reduce((total, d) => total + d[key], 0);
   const todayRow = s.daily[s.daily.length - 1] || { visitors: 0, views: 0 };
   const week = s.daily.slice(-7);
-  const count = name => (s.events.find(e => e.label === name) || { n: 0 }).n;
+  const count = name => (s.clicks.find(e => e.label === name) || { n: 0 }).n;
   const noData = 'Nothing recorded in this period yet.';
+  const visitorsTotal = sum(s.daily, 'visitors');
+
+  const returning = s.loyalty.total ? Math.round(((s.loyalty.back || 0) / s.loyalty.total) * 100) : 0;
+  const avgTime = s.engagement.n ? clock(s.engagement.dur || 0) : '—';
+  const avgScroll = s.engagement.n ? Math.round(s.engagement.scroll || 0) : null;
+
+  // How far down the page people got, in page order
+  const reached = new Map(s.sections.map(x => [x.label.replace('Section: ', ''), x.n]));
+  const funnel = SECTION_ORDER.filter(name => reached.has(name)).map(name => ({ label: name, n: reached.get(name) }));
+  const funnelBase = funnel.length ? Math.max(...funnel.map(f => f.n)) : 0;
 
   const tabs = s.ranges.map(r => `<a href="?days=${r}" class="${r === s.days ? 'on' : ''}">${r} days</a>`).join('');
+  const m = s.mcp.totals;
 
-  const recent = s.recent.length
-    ? `<div class="scroll"><table><thead><tr><th>When (IST)</th><th>Country</th><th>Device</th><th>Browser</th><th>Came from</th></tr></thead><tbody>` +
-      s.recent.map(r => `<tr><td>${esc(r.when)}</td><td>${esc(countryName(r.country))}</td><td>${esc(r.device)}</td><td>${esc(r.browser)}</td><td>${esc(r.ref)}</td></tr>`).join('') +
+  const mcpRecent = s.mcp.recent.length
+    ? `<div class="scroll"><table><thead><tr><th>When (IST)</th><th>AI app</th><th>What it did</th><th>Country</th></tr></thead><tbody>` +
+      s.mcp.recent.map(r => `<tr><td>${esc(r.when)}</td><td>${esc(r.client)}${r.client_version ? ` <span class="label">${esc(r.client_version)}</span>` : ''}</td>` +
+        `<td>${esc(r.method === 'tools/call' ? 'Called ' + r.tool : r.method === 'initialize' ? 'Connected' : 'Listed tools')}</td><td>${esc(countryName(r.country))}</td></tr>`).join('') +
       '</tbody></table></div>'
-    : `<p class="empty">${noData}</p>`;
+    : '<p class="empty">No AI app has connected yet. Add the MCP address to Claude, ChatGPT or Cursor and ask about yourself to see it here.</p>';
 
   return `${HEAD('Dashboard — Arasada Akhil')}
 <body><div class="wrap">
@@ -203,42 +343,75 @@ export function renderDashboard(s) {
   </header>
 
   <section class="tiles">
-    <div class="tile"><span class="label">Visitors · last ${s.days} days</span><b>${fmt(sum(s.daily, 'visitors'))}</b><small>${fmt(todayRow.visitors)} today · ${fmt(sum(week, 'visitors'))} in 7 days</small></div>
-    <div class="tile"><span class="label">Page views · last ${s.days} days</span><b>${fmt(sum(s.daily, 'views'))}</b><small>${fmt(todayRow.views)} today · ${fmt(sum(week, 'views'))} in 7 days</small></div>
+    <div class="tile tile--hot"><span class="label">Visitors · last ${s.days} days</span><b>${fmt(visitorsTotal)}</b><small>${fmt(todayRow.visitors)} today · ${fmt(sum(week, 'visitors'))} in 7 days</small></div>
+    <div class="tile"><span class="label">Page views</span><b>${fmt(sum(s.daily, 'views'))}</b><small>${fmt(todayRow.views)} today · ${fmt(sum(week, 'views'))} in 7 days</small></div>
+    <div class="tile"><span class="label">Returning visitors</span><b>${returning}<small>%</small></b><small>${fmt(s.loyalty.back || 0)} of ${fmt(s.loyalty.total || 0)} came on more than one day</small></div>
+    <div class="tile"><span class="label">Average time on page</span><b>${avgTime}</b><small>${avgScroll === null ? 'Collected from new visits onward' : 'Average scroll depth ' + avgScroll + '%'}</small></div>
     <div class="tile"><span class="label">Resume downloads</span><b>${fmt(count('Resume download'))}</b><small>${fmt(count('Resume preview'))} previews opened</small></div>
     <div class="tile"><span class="label">Contact messages</span><b>${fmt(count('Contact form sent'))}</b><small>${fmt(count('Email click') + count('Phone click'))} email or phone taps</small></div>
+    <div class="tile"><span class="label">AI requests (MCP)</span><b>${fmt(m.calls)}</b><small>${fmt(m.connections)} connections from ${fmt(m.people)} sources</small></div>
+    <div class="tile"><span class="label">Countries reached</span><b>${fmt(s.countries.length)}${s.countries.length >= 8 ? '<small>+</small>' : ''}</b><small>${s.countries[0] ? 'Most from ' + esc(countryName(s.countries[0].label)) : 'No visits yet'}</small></div>
   </section>
 
+  <div class="section-title"><i></i><h2>Traffic</h2></div>
   <section class="grid">
     <div class="card card--wide">
-      <h2>Visitors per day</h2>
-      <p>Unique visitors each day, Indian time. Hover a bar for that day's numbers.</p>
+      <h3>Visitors per day</h3>
+      <p>Unique visitors each day, Indian time. Hover a bar for that day's visitors and page views.</p>
       ${dailyChart(s.daily)}
     </div>
-    <div class="card"><h2>Where they came from</h2><p>Visitors by the site that sent them.</p>${rows(s.refs, noData)}</div>
-    <div class="card"><h2>Countries</h2><p>Visitors by country.</p>${rows(s.countries.map(c => ({ ...c, label: countryName(c.label) })), noData)}</div>
-    <div class="card"><h2>Devices</h2><p>Visitors by device type.</p>${rows(s.devices, noData)}</div>
-    <div class="card"><h2>Browsers</h2><p>Visitors by browser.</p>${rows(s.browsers, noData)}</div>
-    <div class="card card--wide"><h2>What people clicked</h2><p>Downloads, contact actions and links to your projects.</p>${rows(s.events, 'No clicks recorded in this period yet.')}</div>
-    <div class="card card--wide"><h2>Latest visits</h2><p>The 15 most recent page views.</p>${recent}</div>
+    <div class="card card--wide">
+      <h3>When people visit</h3>
+      <p>Page views by weekday and hour, Indian time. Darker means busier.</p>
+      ${heatmap(s.heat)}
+    </div>
+    <div class="card"><h3>Where they came from</h3><p>Visitors by the site or app that sent them.</p>${rows(s.refs, noData, visitorsTotal)}</div>
+    <div class="card"><h3>How far they got</h3><p>Visitors who scrolled to each section of the page.</p>${rows(funnel, 'Collected from new visits onward.', funnelBase)}</div>
   </section>
 
-  <footer>No cookies and no IP addresses are stored. A visitor is counted once per day. Known bots are left out.</footer>
+  <div class="section-title"><i></i><h2>Audience</h2></div>
+  <section class="grid grid--3">
+    <div class="card"><h3>Countries</h3><p>Visitors by country.</p>${rows(s.countries.map(c => ({ ...c, label: countryName(c.label) })), noData)}</div>
+    <div class="card"><h3>Cities</h3><p>Visitors by city.</p>${rows(s.cities, 'Collected from new visits onward.')}</div>
+    <div class="card"><h3>Networks</h3><p>Internet provider or company network.</p>${rows(s.orgs, 'Collected from new visits onward.')}</div>
+    <div class="card"><h3>Devices</h3><p>Visitors by device type.</p>${rows(s.devices, noData)}</div>
+    <div class="card"><h3>Operating systems</h3><p>Visitors by system.</p>${rows(s.systems, 'Collected from new visits onward.')}</div>
+    <div class="card"><h3>Browsers</h3><p>Visitors by browser.</p>${rows(s.browsers, noData)}</div>
+    <div class="card card--wide"><h3>What people clicked</h3><p>Downloads, contact actions and links to your projects.</p>${rows(s.clicks, 'No clicks recorded in this period yet.')}</div>
+  </section>
+
+  <div class="section-title"><i></i><h2>AI assistants (MCP)</h2></div>
+  <section class="grid grid--3">
+    <div class="card"><h3>Which AI</h3><p>Connections and requests by AI app.</p>${rows(s.mcp.clients, 'No AI app has connected in this period.')}</div>
+    <div class="card"><h3>What they asked for</h3><p>Requests by tool.</p>${rows(s.mcp.tools, 'No requests in this period.')}</div>
+    <div class="card"><h3>Latest AI activity</h3><p>The 10 most recent MCP requests.</p>${mcpRecent}</div>
+  </section>
+
+  <div class="section-title" id="visitors"><i></i><h2>Visitors</h2></div>
+  <section class="card">
+    <h3>Everyone who visited</h3>
+    <p>One row per IP address, newest first. Click the arrow to see each visit. The red badge marks people who viewed more than once.</p>
+    ${people(s)}
+  </section>
+
+  <footer>Each visit stores the IP address, approximate location, network and device. No cookies are used. Known bots are left out. Visits recorded before IP logging was added show as "not recorded".</footer>
 </div>
 <script>
   (function () {
-    var chart = document.getElementById('daily');
-    if (!chart) return;
-    var tip = chart.querySelector('.tip');
-    chart.querySelectorAll('g.col').forEach(function (col) {
-      col.addEventListener('mouseenter', function () {
-        var d = col.dataset;
-        tip.innerHTML = '<b>' + d.day + '</b>' + d.visitors + ' visitors · ' + d.views + ' views';
-        tip.style.left = (d.x * 100) + '%';
-        tip.style.top = (d.y * 100) + '%';
-        tip.classList.add('on');
+    document.querySelectorAll('.chart').forEach(function (chart) {
+      var tip = chart.querySelector('.tip');
+      chart.querySelectorAll('[data-tip]').forEach(function (mark) {
+        mark.addEventListener('mouseenter', function () {
+          var parts = mark.getAttribute('data-tip').split('|');
+          tip.textContent = '';
+          var b = document.createElement('b'); b.textContent = parts[0];
+          tip.appendChild(b); tip.appendChild(document.createTextNode(parts[1] || ''));
+          tip.style.left = (mark.getAttribute('data-x') * 100) + '%';
+          tip.style.top = (mark.getAttribute('data-y') * 100) + '%';
+          tip.classList.add('on');
+        });
+        mark.addEventListener('mouseleave', function () { tip.classList.remove('on'); });
       });
-      col.addEventListener('mouseleave', function () { tip.classList.remove('on'); });
     });
   })();
 </script>

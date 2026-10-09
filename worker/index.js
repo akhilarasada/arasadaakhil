@@ -1,12 +1,14 @@
-// Visitor tracking + private dashboard for the portfolio.
-// The site itself is served as static files from /public; only /api/track and
+// Visitor tracking, the private dashboard and the MCP server for the portfolio.
+// The site itself is served as static files from /public; only /api/*, /mcp and
 // /dashboard reach this code.
 
 import { renderDashboard, renderLogin, renderMessage } from './dashboard.js';
+import { handleMcp, mcpPublicStats } from './mcp.js';
+import { ensureSchema, dayOf, istString, hash, clean, refHost, deviceOf, browserOf, osOf } from './store.js';
 
 const BOT = /bot|crawl|spider|slurp|preview|headless|lighthouse|monitor|pingdom|uptime|curl|wget|python|scrapy|httpclient|facebookexternalhit|whatsapp/i;
-const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
 const RANGES = [7, 30, 90];
+const PAGE_SIZE = 15;
 
 // Dashboard sign-in. The password lives in the DASHBOARD_PASSWORD secret.
 const DASHBOARD_USER = 'arasadaakhil.website';
@@ -14,8 +16,6 @@ const SESSION_COOKIE = 'dash_session';
 const SESSION_DAYS = 7;
 const MAX_ATTEMPTS = 8;          // wrong sign-ins allowed per visitor...
 const ATTEMPT_WINDOW_MIN = 15;   // ...within this many minutes
-
-let schemaReady = false;
 
 export default {
   async fetch(request, env, ctx) {
@@ -27,6 +27,8 @@ export default {
       ctx.waitUntil(track(request, env, raw).catch(err => console.error('track failed', err)));
       return new Response(null, { status: 204 });
     }
+    if (url.pathname === '/mcp' || url.pathname === '/mcp/') return handleMcp(request, env, ctx);
+    if (url.pathname === '/api/mcp-stats') return mcpPublicStats(env);
 
     if (url.pathname === '/dashboard/logout') {
       return new Response(null, {
@@ -42,35 +44,6 @@ export default {
   }
 };
 
-/* ---------- storage ---------- */
-
-async function ensureSchema(db) {
-  if (schemaReady) return;
-  await db.batch([
-    db.prepare(`CREATE TABLE IF NOT EXISTS events (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      ts INTEGER NOT NULL,
-      day TEXT NOT NULL,
-      type TEXT NOT NULL,
-      name TEXT,
-      path TEXT,
-      ref TEXT,
-      country TEXT,
-      device TEXT,
-      browser TEXT,
-      visitor TEXT
-    )`),
-    db.prepare('CREATE INDEX IF NOT EXISTS idx_events_day ON events (day, type)'),
-    db.prepare('CREATE TABLE IF NOT EXISTS login_attempts (id INTEGER PRIMARY KEY AUTOINCREMENT, ts INTEGER NOT NULL, who TEXT NOT NULL)')
-  ]);
-  schemaReady = true;
-}
-
-// Dates are kept in Indian time so "today" matches the owner's day
-function dayOf(ts) {
-  return new Date(ts + IST_OFFSET_MS).toISOString().slice(0, 10);
-}
-
 /* ---------- tracking ---------- */
 
 async function track(request, env, raw) {
@@ -81,70 +54,41 @@ async function track(request, env, raw) {
   let body;
   try { body = JSON.parse(raw); } catch (e) { return; }
   if (!body || typeof body !== 'object') return;
-  const type = body.type === 'event' ? 'event' : 'pageview';
+  const type = body.type === 'event' || body.type === 'leave' ? body.type : 'pageview';
   const ts = Date.now();
   const day = dayOf(ts);
+  const cf = request.cf || {};
+  const ip = request.headers.get('cf-connecting-ip') || null;
 
-  // Anonymous daily visitor id: the IP is hashed with the date and never stored
-  const ip = request.headers.get('cf-connecting-ip') || '';
-  const visitor = await hash(day + '|' + ip + '|' + ua + '|' + (env.DASHBOARD_PASSWORD || 'salt'));
+  // Daily visitor id, used to count unique visitors per day
+  const visitor = await hash(day + '|' + (ip || '') + '|' + ua + '|' + (env.DASHBOARD_PASSWORD || 'salt'));
+  const width = Number(body.w) || 0, height = Number(body.h) || 0;
+  const whole = (value, max) => Number.isFinite(Number(value)) ? Math.max(0, Math.min(max, Math.round(Number(value)))) : null;
 
   await ensureSchema(env.DB);
   await env.DB.prepare(
-    'INSERT INTO events (ts, day, type, name, path, ref, country, device, browser, visitor) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    `INSERT INTO events (ts, day, type, name, path, ref, country, device, browser, visitor,
+       ip, city, region, os, lang, screen, org, dur, scroll)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).bind(
     ts, day, type,
     clean(body.name, 80),
     clean(body.path, 120) || '/',
     refHost(body.ref, new URL(request.url).hostname),
-    (request.cf && request.cf.country) || 'Unknown',
-    deviceOf(ua, Number(body.w) || 0),
+    cf.country || 'Unknown',
+    deviceOf(ua, width),
     browserOf(ua),
-    visitor
+    visitor,
+    ip,
+    clean(cf.city, 60),
+    clean(cf.region, 60),
+    osOf(ua),
+    clean(body.lang, 12),
+    width && height ? width + '×' + height : null,
+    clean(cf.asOrganization, 80),
+    type === 'leave' ? whole(body.dur, 7200) : null,
+    type === 'leave' ? whole(body.scroll, 100) : null
   ).run();
-}
-
-async function hash(text) {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
-  return [...new Uint8Array(buf)].slice(0, 8).map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
-function clean(value, max) {
-  return typeof value === 'string' ? value.slice(0, max) : null;
-}
-
-function refHost(ref, ownHost) {
-  if (!ref || typeof ref !== 'string') return 'Direct';
-  try {
-    const host = new URL(ref).hostname.replace(/^www\./, '');
-    if (!host || host === ownHost.replace(/^www\./, '')) return 'Direct';
-    if (/linkedin\.com$|lnkd\.in$/.test(host)) return 'LinkedIn';
-    if (/google\./.test(host)) return 'Google';
-    if (/github\.com$/.test(host)) return 'GitHub';
-    if (/instagram\.com$/.test(host)) return 'Instagram';
-    if (/facebook\.com$|fb\.com$/.test(host)) return 'Facebook';
-    if (/t\.co$|twitter\.com$|x\.com$/.test(host)) return 'X';
-    if (/bing\.com$/.test(host)) return 'Bing';
-    return host.slice(0, 60);
-  } catch (e) {
-    return 'Direct';
-  }
-}
-
-function deviceOf(ua, width) {
-  if (/ipad|tablet/i.test(ua) || (width >= 600 && width < 1000 && /android/i.test(ua))) return 'Tablet';
-  if (/mobi|iphone|android/i.test(ua)) return 'Mobile';
-  return 'Desktop';
-}
-
-function browserOf(ua) {
-  if (/edg\//i.test(ua)) return 'Edge';
-  if (/opr\/|opera/i.test(ua)) return 'Opera';
-  if (/samsungbrowser/i.test(ua)) return 'Samsung Internet';
-  if (/firefox|fxios/i.test(ua)) return 'Firefox';
-  if (/chrome|crios/i.test(ua)) return 'Chrome';
-  if (/safari/i.test(ua)) return 'Safari';
-  return 'Other';
 }
 
 /* ---------- dashboard ---------- */
@@ -173,7 +117,8 @@ async function dashboard(request, env, url) {
   }
 
   const days = RANGES.includes(Number(url.searchParams.get('days'))) ? Number(url.searchParams.get('days')) : 30;
-  const stats = await loadStats(env.DB, days);
+  const page = Math.max(1, Math.floor(Number(url.searchParams.get('page')) || 1));
+  const stats = await loadStats(env.DB, days, page);
   return new Response(renderDashboard(stats), { headers });
 }
 
@@ -250,23 +195,66 @@ async function digest(text) {
   return new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)));
 }
 
-async function loadStats(db, days) {
+/* ---------- numbers for the dashboard ---------- */
+
+// One person across days: their IP when we have it, else the older daily id
+const WHO = 'COALESCE(ip, visitor)';
+// Hour and weekday in Indian time
+const IST_EPOCH = '(ts + 19800000) / 1000';
+
+async function loadStats(db, days, page) {
   await ensureSchema(db);
   const now = Date.now();
   const today = dayOf(now);
   const since = dayOf(now - (days - 1) * 86400000);
   const pv = "type = 'pageview' AND day >= ?";
 
-  const top = column => db.prepare(
-    `SELECT ${column} AS label, COUNT(DISTINCT visitor) AS n FROM events WHERE ${pv} GROUP BY ${column} ORDER BY n DESC LIMIT 8`
+  const top = (column, limit = 8) => db.prepare(
+    `SELECT ${column} AS label, COUNT(DISTINCT visitor) AS n FROM events
+     WHERE ${pv} AND ${column} IS NOT NULL AND ${column} != '' GROUP BY ${column} ORDER BY n DESC LIMIT ${limit}`
   ).bind(since);
 
-  const [series, countries, refs, devices, browsers, events, recent] = await db.batch([
+  const [series, refs, countries, cities, devices, systems, browsers, orgs,
+    clicks, sections, heat, engagement, loyalty, people, peoplePage,
+    mcpClients, mcpTools, mcpTotals, mcpRecent] = await db.batch([
     db.prepare(`SELECT day, COUNT(*) AS views, COUNT(DISTINCT visitor) AS visitors FROM events WHERE ${pv} GROUP BY day ORDER BY day`).bind(since),
-    top('country'), top('ref'), top('device'), top('browser'),
-    db.prepare("SELECT name AS label, COUNT(*) AS n FROM events WHERE type = 'event' AND day >= ? GROUP BY name ORDER BY n DESC LIMIT 12").bind(since),
-    db.prepare("SELECT ts, country, device, browser, ref FROM events WHERE type = 'pageview' ORDER BY id DESC LIMIT 15")
+    top('ref'), top('country'), top('city'), top('device'), top('os'), top('browser'), top('org'),
+    db.prepare("SELECT name AS label, COUNT(*) AS n FROM events WHERE type = 'event' AND day >= ? AND name NOT LIKE 'Section: %' GROUP BY name ORDER BY n DESC LIMIT 12").bind(since),
+    db.prepare("SELECT name AS label, COUNT(DISTINCT visitor) AS n FROM events WHERE type = 'event' AND day >= ? AND name LIKE 'Section: %' GROUP BY name").bind(since),
+    db.prepare(`SELECT CAST(strftime('%w', ${IST_EPOCH}, 'unixepoch') AS INTEGER) AS dow,
+                       CAST(strftime('%H', ${IST_EPOCH}, 'unixepoch') AS INTEGER) AS hr, COUNT(*) AS n
+                FROM events WHERE ${pv} GROUP BY dow, hr`).bind(since),
+    db.prepare(`SELECT AVG(d) AS dur, AVG(s) AS scroll, COUNT(*) AS n FROM (
+                  SELECT MAX(dur) AS d, MAX(scroll) AS s FROM events WHERE type = 'leave' AND day >= ? GROUP BY visitor, day)`).bind(since),
+    db.prepare(`SELECT COUNT(*) AS total, SUM(CASE WHEN d > 1 THEN 1 ELSE 0 END) AS back FROM (
+                  SELECT COUNT(DISTINCT day) AS d FROM events WHERE type = 'pageview' GROUP BY ${WHO} HAVING MAX(day) >= ?)`).bind(since),
+    db.prepare(`SELECT COUNT(DISTINCT ${WHO}) AS n FROM events WHERE ${pv}`).bind(since),
+    // With a single MAX(), SQLite fills the other columns from that same latest row
+    db.prepare(`SELECT ${WHO} AS who, ip, COUNT(*) AS views, COUNT(DISTINCT day) AS days, MAX(ts) AS last,
+                       country, city, region, org, device, os, browser, screen, lang, ref
+                FROM events WHERE ${pv} GROUP BY ${WHO} ORDER BY last DESC LIMIT ${PAGE_SIZE} OFFSET ?`).bind(since, (page - 1) * PAGE_SIZE),
+    db.prepare("SELECT client AS label, COUNT(*) AS n FROM mcp_calls WHERE day >= ? AND method IN ('initialize', 'tools/call') GROUP BY client ORDER BY n DESC LIMIT 8").bind(since),
+    db.prepare("SELECT tool AS label, COUNT(*) AS n FROM mcp_calls WHERE day >= ? AND method = 'tools/call' GROUP BY tool ORDER BY n DESC LIMIT 8").bind(since),
+    db.prepare(`SELECT SUM(CASE WHEN method = 'tools/call' THEN 1 ELSE 0 END) AS calls,
+                       SUM(CASE WHEN method = 'initialize' THEN 1 ELSE 0 END) AS connections,
+                       COUNT(DISTINCT COALESCE(ip, ua)) AS people
+                FROM mcp_calls WHERE day >= ?`).bind(since),
+    db.prepare('SELECT ts, method, tool, client, client_version, country FROM mcp_calls ORDER BY id DESC LIMIT 10')
   ]);
+
+  // Every visit made by the people on this page, for the expandable rows
+  const visitors = peoplePage.results;
+  const visitsBy = new Map(visitors.map(v => [v.who, []]));
+  if (visitors.length) {
+    const marks = visitors.map(() => '?').join(', ');
+    const visits = await db.prepare(
+      `SELECT ${WHO} AS who, ts, path, ref FROM events WHERE type = 'pageview' AND ${WHO} IN (${marks}) ORDER BY ts DESC LIMIT 400`
+    ).bind(...visitors.map(v => v.who)).all();
+    for (const v of visits.results) {
+      const list = visitsBy.get(v.who);
+      if (list && list.length < 25) list.push({ when: istString(v.ts), path: v.path, ref: v.ref });
+    }
+  }
 
   // Fill the days nobody visited so the chart has no gaps
   const byDay = new Map(series.results.map(r => [r.day, r]));
@@ -277,10 +265,21 @@ async function loadStats(db, days) {
     daily.push({ day, visitors: row ? row.visitors : 0, views: row ? row.views : 0 });
   }
 
+  const totalPeople = people.results[0].n || 0;
   return {
     days, today, ranges: RANGES, daily,
-    countries: countries.results, refs: refs.results, devices: devices.results, browsers: browsers.results,
-    events: events.results,
-    recent: recent.results.map(r => ({ ...r, when: new Date(r.ts + IST_OFFSET_MS).toISOString().slice(0, 16).replace('T', ' ') }))
+    refs: refs.results, countries: countries.results, cities: cities.results, devices: devices.results,
+    systems: systems.results, browsers: browsers.results, orgs: orgs.results,
+    clicks: clicks.results,
+    sections: sections.results,
+    heat: heat.results,
+    engagement: engagement.results[0] || {},
+    loyalty: loyalty.results[0] || {},
+    page, pages: Math.max(1, Math.ceil(totalPeople / PAGE_SIZE)), totalPeople,
+    visitors: visitors.map(v => ({ ...v, lastSeen: istString(v.last), visits: visitsBy.get(v.who) || [] })),
+    mcp: {
+      clients: mcpClients.results, tools: mcpTools.results, totals: mcpTotals.results[0] || {},
+      recent: mcpRecent.results.map(r => ({ ...r, when: istString(r.ts) }))
+    }
   };
 }

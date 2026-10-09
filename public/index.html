@@ -522,6 +522,47 @@
       </div>
     </section>
 
+    <!-- MCP -->
+    <section class="mcp" id="mcp">
+      <div class="mcp__head">
+        <p class="label">(For AI assistants · MCP server)</p>
+        <h2 class="reveal">Ask your AI<br>about me<i class="hero__block"></i></h2>
+      </div>
+
+      <div class="mcp__grid">
+        <div class="mcp__body reveal">
+          <p class="mcp__lead">This portfolio speaks MCP. Connect Claude, ChatGPT, Cursor or any MCP-ready assistant, then ask it about my experience, projects or how to hire me. It answers from this site's own data.</p>
+          <ul class="mcp__tools">
+            <li>get_profile</li><li>get_experience</li><li>list_projects</li>
+            <li>get_project</li><li>get_skills</li><li>get_contact</li>
+          </ul>
+          <p class="mcp__stats" id="mcp-stats">Read-only. No sign-in needed.</p>
+        </div>
+
+        <div class="terminal reveal">
+          <div class="terminal__bar"><i></i><i></i><i></i><span>mcp server</span></div>
+          <div class="terminal__row">
+            <span class="terminal__label">Address</span>
+            <code id="mcp-url">https://arasadaakhil.website/mcp</code>
+            <button type="button" class="terminal__copy" data-copy="#mcp-url">Copy</button>
+          </div>
+          <div class="terminal__row terminal__row--block">
+            <span class="terminal__label">Config</span>
+            <pre id="mcp-config">{
+  "mcpServers": {
+    "arasada-akhil": {
+      "type": "http",
+      "url": "https://arasadaakhil.website/mcp"
+    }
+  }
+}</pre>
+            <button type="button" class="terminal__copy" data-copy="#mcp-config">Copy</button>
+          </div>
+          <p class="terminal__ask"><b>&gt;</b> What has Akhil built, and is he free for a project?<span class="terminal__caret"></span></p>
+        </div>
+      </div>
+    </section>
+
     <!-- Open for projects -->
     <section class="offer" id="projects">
       <p class="label">(Open to discuss projects)</p>
@@ -594,6 +635,7 @@
 
       <footer class="footer">
         <span>© <span id="year">2026</span> Arasada Akhil</span>
+        <span class="footer__note">This site logs visits (IP address, device and pages viewed) to understand its audience.</span>
         <a href="#top">Back to top ↑</a>
       </footer>
     </section>

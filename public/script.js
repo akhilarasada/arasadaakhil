@@ -3,21 +3,55 @@
   var PUBLIC_EMAIL = 'contact@arasadaakhil.website'; // address shown to visitors
   var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  // Anonymous visit tracking for /dashboard: no cookies, sent in the background
-  // after the page is up. Skipped on local previews.
+  // Visit tracking for /dashboard: no cookies, sent in the background after the
+  // page is up. Skipped on local previews.
   var isLive = !/^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname) && location.protocol !== 'file:';
-  function track(type, name) {
+  function track(type, name, extra) {
     if (!isLive) return;
     try {
-      var data = JSON.stringify({
+      var payload = {
         type: type, name: name || null, path: location.pathname,
-        ref: document.referrer, w: window.innerWidth
-      });
+        ref: document.referrer, w: window.innerWidth, h: window.innerHeight,
+        lang: navigator.language || ''
+      };
+      if (extra) for (var key in extra) payload[key] = extra[key];
+      var data = JSON.stringify(payload);
       if (navigator.sendBeacon) navigator.sendBeacon('/api/track', data);
       else fetch('/api/track', { method: 'POST', body: data, keepalive: true });
     } catch (e) { /* tracking must never break the page */ }
   }
   window.addEventListener('load', function () { track('pageview'); });
+
+  // Time on page and how far down the visitor scrolled, sent when they leave or switch tab
+  var startedAt = Date.now(), deepest = 0;
+  window.addEventListener('scroll', function () {
+    var full = document.documentElement.scrollHeight - window.innerHeight;
+    if (full > 0) deepest = Math.max(deepest, Math.min(100, Math.round((window.scrollY / full) * 100)));
+  }, { passive: true });
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'hidden') {
+      track('leave', null, { dur: Math.round((Date.now() - startedAt) / 1000), scroll: deepest });
+    }
+  });
+
+  // Which sections the visitor actually reached, each reported once
+  var SECTION_NAMES = {
+    about: 'About', work: 'Work', freelance: 'Freelance', experience: 'Experience', skills: 'Skillset',
+    resume: 'Resume', mcp: 'MCP', projects: 'Projects offer', contact: 'Contact'
+  };
+  if (isLive && 'IntersectionObserver' in window) {
+    var seen = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        track('event', 'Section: ' + SECTION_NAMES[entry.target.id]);
+        seen.unobserve(entry.target);
+      });
+    }, { rootMargin: '0px 0px -40% 0px' });
+    Object.keys(SECTION_NAMES).forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) seen.observe(el);
+    });
+  }
   document.addEventListener('click', function (e) {
     var a = e.target.closest && e.target.closest('a[href]');
     if (!a) return;
@@ -303,6 +337,28 @@
       })
       .then(function () { sendBtn.disabled = false; });
   });
+
+  // MCP section: copy buttons, and live usage numbers from the server
+  document.querySelectorAll('[data-copy]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var text = document.querySelector(btn.getAttribute('data-copy')).textContent.trim();
+      var done = function () {
+        var label = btn.textContent;
+        btn.textContent = 'Copied';
+        setTimeout(function () { btn.textContent = label; }, 1600);
+      };
+      if (navigator.clipboard) navigator.clipboard.writeText(text).then(done, function () {});
+      track('event', 'MCP address copied');
+    });
+  });
+  var mcpStats = document.getElementById('mcp-stats');
+  if (mcpStats && isLive) {
+    fetch('/api/mcp-stats').then(function (res) { return res.json(); }).then(function (data) {
+      if (!data || !data.calls) return;
+      var apps = (data.clients || []).map(function (c) { return c.name; }).slice(0, 3).join(', ');
+      mcpStats.textContent = data.calls + ' question' + (data.calls === 1 ? '' : 's') + ' answered so far' + (apps ? ' · asked from ' + apps : '');
+    }).catch(function () {});
+  }
 
   document.getElementById('year').textContent = new Date().getFullYear();
 })();
