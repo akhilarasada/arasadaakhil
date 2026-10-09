@@ -58,6 +58,7 @@
       location.replace('https://arasadaakhil.website' + location.pathname + location.search + location.hash);
     }
     document.documentElement.classList.add('js');
+    try { if (localStorage.getItem('invert') === '1') document.documentElement.setAttribute('data-invert', ''); } catch (e) {}
   </script>
 </head>
 <body>
@@ -84,7 +85,10 @@
       <a href="#resume" class="nav__hide">Resume</a>
       <a href="#contact">Contact</a>
     </nav>
-    <a href="#contact" class="nav__cta"><span class="dot"></span>Open to freelance projects</a>
+    <div class="nav__side">
+      <a href="#contact" class="nav__cta"><span class="dot"></span>Open to freelance projects</a>
+      <button type="button" class="nav__invert" id="invert" aria-pressed="false" data-cursor="Flood"><i aria-hidden="true"></i><span>Invert</span></button>
+    </div>
   </header>
 
   <main id="top">
@@ -649,6 +653,7 @@
 
   </main>
 
+  <script src="liquid.js"></script>
   <script src="script.js"></script>
 </body>
 </html>

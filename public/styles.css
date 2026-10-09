@@ -277,7 +277,6 @@ a { color: inherit; text-decoration: none; }
   background: var(--red);
   flex-shrink: 0;
 }
-.marquee__track:hover .marquee__inner { animation-play-state: paused; }
 @keyframes slide { to { transform: translateX(-100%); } }
 
 /* ---------- Section heads ---------- */
@@ -1151,6 +1150,71 @@ a { color: inherit; text-decoration: none; }
   .terminal__label { grid-column: 1 / -1; }
 }
 
+/* ---------- Liquid portrait ---------- */
+/* liquid.js draws the photo on a canvas laid exactly over the image, with the same soft edges */
+.hero__portrait.is-liquid img { visibility: hidden; }
+.hero__liquid {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  -webkit-mask-image: radial-gradient(ellipse 54% 70% at 50% 52%, #000 48%, transparent 100%), linear-gradient(to bottom, transparent 0%, #000 26%);
+  mask-image: radial-gradient(ellipse 54% 70% at 50% 52%, #000 48%, transparent 100%), linear-gradient(to bottom, transparent 0%, #000 26%);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+}
+@media (max-width: 900px) {
+  .hero__liquid {
+    -webkit-mask-image: radial-gradient(ellipse 54% 70% at 50% 52%, #000 48%, transparent 100%), linear-gradient(to bottom, transparent 0%, #000 26%, #000 68%, transparent 98%);
+    mask-image: radial-gradient(ellipse 54% 70% at 50% 52%, #000 48%, transparent 100%), linear-gradient(to bottom, transparent 0%, #000 26%, #000 68%, transparent 98%);
+  }
+}
+
+/* ---------- Invert: the whole site flips to its negative ---------- */
+.nav__side { display: flex; align-items: center; gap: clamp(14px, 2vw, 28px); }
+.nav__invert {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  background: none;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+.nav__invert i {
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+  background: linear-gradient(90deg, currentColor 50%, transparent 50%);
+  transition: transform 0.7s var(--ease);
+}
+.nav__invert:hover i, [data-invert] .nav__invert i { transform: rotate(180deg); }
+[data-invert] .nav__invert:hover i { transform: rotate(360deg); }
+
+/* One filter on the root flips every colour; hue-rotate brings the red back to red */
+html[data-invert] { filter: invert(1) hue-rotate(180deg); background: #101114; }
+/* Logos, certificates and the resume are real images, so flip them back to normal */
+html[data-invert] .exp__logo,
+html[data-invert] .cert-peek,
+html[data-invert] .lightbox img,
+html[data-invert] .paper__sheet img { filter: invert(1) hue-rotate(180deg); }
+
+/* The flood: the new colours pour out from where you clicked */
+::view-transition-old(root), ::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+::view-transition-old(root) { z-index: 1; }
+::view-transition-new(root) { z-index: 2; }
+
+/* ---------- Type that leans with scroll speed ---------- */
+.hero__title, .section-head {
+  transform: skewY(var(--lean, 0deg));
+  transform-origin: left center;
+  will-change: transform;
+}
+
 /* ---------- Certificates ---------- */
 .certs li { padding: 0; }
 .cert {
@@ -1316,6 +1380,7 @@ a { color: inherit; text-decoration: none; }
 /* ---------- Responsive ---------- */
 @media (max-width: 900px) {
   .nav__cta { display: none; }
+  .nav__invert span { display: none; }
   .project, .contact__grid { grid-template-columns: 1fr; }
   .project { align-items: start; }
   .project--flip .project__visual { order: 0; }

@@ -238,6 +238,49 @@
     })();
   }
 
+  // Invert: flips the whole site to its negative, flooding out from where you clicked
+  var invertBtn = document.getElementById('invert');
+  var rootEl = document.documentElement;
+  function setInvert(on) {
+    rootEl.toggleAttribute('data-invert', on);
+    invertBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    try { localStorage.setItem('invert', on ? '1' : '0'); } catch (e) { /* private mode */ }
+  }
+  invertBtn.setAttribute('aria-pressed', rootEl.hasAttribute('data-invert') ? 'true' : 'false');
+  invertBtn.addEventListener('click', function (e) {
+    var on = !rootEl.hasAttribute('data-invert');
+    track('event', 'Invert ' + (on ? 'on' : 'off'));
+    if (!document.startViewTransition || reduced) { setInvert(on); return; }
+    var x = e.clientX || window.innerWidth - 40, y = e.clientY || 30;
+    var reach = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
+    document.startViewTransition(function () { setInvert(on); }).ready.then(function () {
+      rootEl.animate(
+        { clipPath: ['circle(0px at ' + x + 'px ' + y + 'px)', 'circle(' + reach + 'px at ' + x + 'px ' + y + 'px)'] },
+        { duration: 1100, easing: 'cubic-bezier(0.7, 0, 0.2, 1)', pseudoElement: '::view-transition-new(root)' }
+      );
+    });
+  });
+
+  // Scroll speed: headings lean into the motion and the stack strip speeds up and reverses
+  if (!reduced) {
+    var strips = document.querySelectorAll('.marquee__inner');
+    var lastY = window.scrollY, speed = 0, direction = 1;
+    (function feel() {
+      var y = window.scrollY, delta = y - lastY;
+      lastY = y;
+      speed += (delta - speed) * 0.12;
+      if (Math.abs(delta) > 1) direction = delta > 0 ? 1 : -1;
+      var lean = Math.max(-3.5, Math.min(3.5, speed * 0.06));
+      rootEl.style.setProperty('--lean', lean.toFixed(3) + 'deg');
+      var rate = direction * (1 + Math.min(7, Math.abs(speed) * 0.09));
+      strips.forEach(function (strip) {
+        var anims = strip.getAnimations ? strip.getAnimations() : [];
+        if (anims[0]) anims[0].playbackRate = rate;
+      });
+      requestAnimationFrame(feel);
+    })();
+  }
+
   // Certificates: preview follows the pointer on hover, click opens it full size
   var peek = document.querySelector('.cert-peek');
   var peekImg = peek.querySelector('img');
