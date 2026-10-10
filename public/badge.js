@@ -56,9 +56,12 @@
         ctx.filter = 'none';
       }
       ctx.restore();
-      ctx.fillStyle = RED; ctx.fillRect(px + pw - 150, py + ph - 54, 150, 54);
-      ctx.fillStyle = '#fff'; ctx.font = '600 24px "Archivo", Arial, sans-serif';
-      ctx.fillText('TEAM LEAD', px + pw - 136, py + ph - 20);
+      // the tag is sized from its text so the label always has room on both sides
+      ctx.font = '600 24px "Archivo", Arial, sans-serif';
+      var tagPad = 22, tagW = Math.ceil(ctx.measureText('TEAM LEAD').width) + tagPad * 2;
+      ctx.fillStyle = RED; ctx.fillRect(px + pw - tagW, py + ph - 54, tagW, 54);
+      ctx.fillStyle = '#fff';
+      ctx.fillText('TEAM LEAD', px + pw - tagW + tagPad, py + ph - 20);
 
       ctx.fillStyle = INK; ctx.font = '500 118px "Funnel Display", Arial, sans-serif';
       ctx.fillText('Arasada', 50, 880);
