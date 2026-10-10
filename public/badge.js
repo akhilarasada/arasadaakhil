@@ -316,9 +316,17 @@
   function load() {
     if (loading) return;
     loading = true;
-    var script = document.createElement('script');
-    script.src = THREE_URL;
-    script.onload = function () {
+    // three.js is shared with the Selected Work blocks and fetched once
+    if (!window.__three) {
+      window.__three = new Promise(function (resolve, reject) {
+        var script = document.createElement('script');
+        script.src = THREE_URL;
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+      });
+    }
+    window.__three.then(function () {
       var photo = new Image(), begun = false;
       var go = function (img) {
         if (begun) return;
@@ -331,8 +339,7 @@
       photo.src = 'assets/akhil.webp';
       // Never wait on a slow photo: the badge appears without it after a few seconds
       setTimeout(function () { go(photo.complete && photo.naturalWidth ? photo : null); }, 4000);
-    };
-    document.head.appendChild(script);
+    }, function () { /* no 3D: the flat card stays */ });
   }
   if ('IntersectionObserver' in window) {
     new IntersectionObserver(function (entries, obs) {

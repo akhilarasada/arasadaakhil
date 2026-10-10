@@ -50,7 +50,8 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230a0a0a'/%3E%3Crect x='10' y='10' width='12' height='12' fill='%23d12424'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=Funnel+Display:wght@400;500;600&family=Instrument+Serif:ital@1&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=Funnel+Display:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Abril+Fatface&family=Bebas+Neue&family=Bungee+Shade&family=Monoton&family=Pacifico&family=Permanent+Marker&family=Playfair+Display:ital,wght@1,700&family=Press+Start+2P&family=Rubik+Mono+One&family=UnifrakturMaguntia&display=swap&text=ARSDKHIL" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
   <script>
     // One address for visitors and Google: send workers.dev and www traffic to the main domain
@@ -68,10 +69,11 @@
   <!-- Preloader -->
   <div class="loader" aria-hidden="true">
     <div class="loader__mark">
-      <span>ARASADA</span>
+      <span class="loader__word" data-shuffle>ARASADA</span>
       <i class="loader__block"></i>
-      <span>AKHIL</span>
+      <span class="loader__word" data-shuffle>AKHIL</span>
     </div>
+    <span class="loader__font" id="loader-font">Funnel Display</span>
   </div>
 
   <!-- Nav -->
@@ -220,117 +222,13 @@
       <div class="rail">
         <div class="rail__pin">
           <div class="rail__stage">
-            <div class="desk">
-              <button type="button" class="desk__enter" data-os-enter data-cursor="Enter"><span>Click to enter the system</span></button>
-              <div class="desk__screen" aria-hidden="true">
-                <div class="desk__bar"><i></i><i></i><i></i><span id="desk-title">RevalERP</span><em>akhil@work</em></div>
-                <div class="desk__apps">
-              <div class="desk__app is-on" data-app="0">
-        <div class="tiles">
-          <span>HRMS</span><span>Finance</span><span>POS</span><span>CMS</span>
-          <span>Ticket CRM</span><span>Procurement</span><span>Sales</span><span>Projects</span>
-        </div>
-        
-              </div>
-              <div class="desk__app" data-app="1">
-        <div class="hr">
-          <div class="hr__people">
-            <span class="hr__label">Employees</span>
-            <div class="hr__person"><i></i><span><b></b><b></b></span><em>Present</em></div>
-            <div class="hr__person"><i></i><span><b></b><b></b></span><em class="hot">On leave</em></div>
-            <div class="hr__person"><i></i><span><b></b><b></b></span><em>Present</em></div>
-          </div>
-          <div class="hr__cal">
-            <span class="hr__label">Attendance</span>
-            <div class="hr__days">
-              <i></i><i></i><i></i><i></i><i></i><i class="off"></i><i class="off"></i>
-              <i></i><i></i><i class="hot"></i><i></i><i></i><i class="off"></i><i class="off"></i>
-              <i></i><i></i><i></i><i></i><i class="hot"></i><i class="off"></i><i class="off"></i>
-              <i></i><i></i><i></i><i class="next"></i><i class="next"></i><i class="off"></i><i class="off"></i>
-            </div>
-          </div>
-        </div>
-        
-              </div>
-              <div class="desk__app" data-app="2">
-        <div class="ar">
-          <span class="ar__tag">Live session</span>
-          <svg class="ar__scene" viewBox="0 0 400 300">
-            <line class="link" x1="168" y1="150" x2="118" y2="112"/>
-            <line class="link" x1="234" y1="148" x2="286" y2="96"/>
-            <line class="link" x1="240" y1="166" x2="302" y2="186"/>
-
-            <!-- floating notes panel -->
-            <g class="float">
-              <g transform="translate(24 62) skewY(-7)">
-                <rect class="glass" width="98" height="66" rx="6"/>
-                <rect class="hot" x="10" y="10" width="14" height="14"/>
-                <rect class="ink" x="32" y="12" width="52" height="4"/>
-                <rect class="dim" x="32" y="21" width="34" height="3"/>
-                <rect class="dim" x="10" y="36" width="78" height="3"/>
-                <rect class="dim" x="10" y="45" width="60" height="3"/>
-                <rect class="dim" x="10" y="54" width="70" height="3"/>
-              </g>
-            </g>
-
-            <!-- floating participants panel -->
-            <g class="float float--b">
-              <g transform="translate(278 38) skewY(7)">
-                <rect class="glass" width="100" height="58" rx="6"/>
-                <circle class="ink" cx="20" cy="20" r="8"/>
-                <rect class="ink" x="36" y="15" width="48" height="4"/>
-                <rect class="dim" x="36" y="23" width="30" height="3"/>
-                <circle class="dim" cx="20" cy="42" r="8"/>
-                <rect class="dim" x="36" y="38" width="42" height="4"/>
-                <rect class="dim" x="36" y="46" width="26" height="3"/>
-              </g>
-            </g>
-
-            <!-- floating video panel -->
-            <g class="float float--c">
-              <g transform="translate(300 160)">
-                <rect class="glass" width="74" height="48" rx="6"/>
-                <path class="hot" d="M30 14 L48 24 L30 34 Z"/>
-              </g>
-            </g>
-
-            <!-- wireframe cube -->
-            <g class="float float--b">
-              <g class="spin">
-                <path class="wire" d="M72 196 L98 211 L98 241 L72 256 L46 241 L46 211 Z"/>
-                <path class="wire" d="M72 226 L72 256 M72 226 L46 211 M72 226 L98 211"/>
-              </g>
-            </g>
-
-            <!-- orbiting sphere -->
-            <g class="float float--c">
-              <circle class="wire" cx="200" cy="52" r="15"/>
-              <ellipse class="wire orbit" cx="200" cy="52" rx="15" ry="15"/>
-              <circle class="hot" cx="200" cy="52" r="3"/>
-            </g>
-
-            <!-- person wearing the headset -->
-            <path class="skin" d="M128 300 C128 240 160 214 200 214 C240 214 272 240 272 300 Z"/>
-            <rect class="skin" x="185" y="194" width="30" height="28"/>
-            <circle class="skin" cx="200" cy="158" r="44"/>
-            <path class="strap" d="M159 142 C166 104 234 104 241 142"/>
-            <rect class="visor" x="148" y="140" width="104" height="38" rx="15"/>
-            <rect class="scan" x="160" y="156" width="80" height="6" rx="3"/>
-          </svg>
-          <span class="ar__users"><i></i><i></i><i></i> 3 in session</span>
-        </div>
-        
-              </div>
-                </div>
-              </div>
-              <div class="desk__neck"></div>
-              <div class="desk__foot"></div>
+            <div class="blocks3d" aria-hidden="true">
+              <p class="blocks3d__caption" id="blocks-caption"><b>25+ modules</b><span>locked into one platform</span></p>
+              <p class="blocks3d__hint label">Drag to turn</p>
             </div>
 
             <div class="rail__side">
               <div class="desk__dock" role="tablist" aria-label="Projects"><button type="button" data-go="0" class="is-on">RevalERP</button><button type="button" data-go="1">SHRMPro</button><button type="button" data-go="2">AR Sessions</button></div>
-              <button type="button" class="os-enter" data-os-enter>Enter the system <span aria-hidden="true">→</span></button>
-              <p class="os-enter__note">Opens a desktop where every project is an app you can open and move around.</p>
               <div class="rail__view">
                 <div class="rail__track">
               <div class="project__body">
@@ -731,8 +629,13 @@
       <p class="bigname" aria-hidden="true" data-letters>Arasada Akhil</p>
 
       <footer class="footer">
-        <span>© <span id="year">2026</span> Arasada Akhil</span>
-        <button type="button" class="footer__prefs" id="consent-open">Tracking preferences</button>
+        <span>© <span id="year">2026</span> Arasada Akhil. All rights reserved.</span>
+        <nav class="footer__legal" aria-label="Legal">
+          <a href="legal.html#privacy">Privacy</a>
+          <a href="legal.html#terms">Terms</a>
+          <a href="legal.html#copyright">Copyright</a>
+          <button type="button" class="footer__prefs" id="consent-open">Tracking preferences</button>
+        </nav>
         <a href="#top">Back to top ↑</a>
       </footer>
     </section>
@@ -742,7 +645,7 @@
   <div class="consent" id="consent" role="dialog" aria-labelledby="consent-title" hidden>
     <div class="consent__text">
       <h2 id="consent-title">Tracking consent</h2>
-      <p>This site records visits (IP address, device and pages viewed) to understand its audience and improve the work shown here. No advertising cookies, and nothing is sold or shared. Choose "Accept" to allow this.</p>
+      <p>This site records visits (IP address, device and pages viewed) to understand its audience and improve the work shown here. No advertising cookies, and nothing is sold or shared. Choose "Accept" to allow this. <a href="legal.html#privacy">Read the privacy policy</a>.</p>
     </div>
     <div class="consent__actions">
       <button type="button" class="btn" data-consent="yes">Accept</button>
@@ -753,7 +656,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.20.0/matter.min.js"></script>
   <script src="liquid.js"></script>
   <script src="script.js"></script>
-  <script src="os.js"></script>
+  <script src="blocks.js"></script>
   <script src="badge.js"></script>
 </body>
 </html>

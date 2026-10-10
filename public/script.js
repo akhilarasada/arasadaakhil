@@ -69,17 +69,77 @@
 
   // Preloader, then hero entrance
   var loader = document.querySelector('.loader');
+  var finished = false;
   function finish() {
+    if (finished) return;
+    finished = true;
     loader.classList.add('done');
     document.body.classList.add('loaded');
     // Hero copy comes in with the name, not on scroll
     document.querySelectorAll('.hero .reveal').forEach(function (el) { el.classList.add('in'); });
   }
-  window.addEventListener('load', function () {
-    setTimeout(finish, reduced ? 0 : 1100);
+
+  // While the page loads, every letter of the name keeps changing typeface. When the page is
+  // ready the letters settle left to right into the site's own face, and the loader lifts.
+  var FACES = [
+    ['Abril Fatface', '"Abril Fatface", serif'], ['Bebas Neue', '"Bebas Neue", sans-serif'],
+    ['Bungee Shade', '"Bungee Shade", sans-serif'], ['Monoton', '"Monoton", sans-serif'],
+    ['Pacifico', '"Pacifico", cursive'], ['Permanent Marker', '"Permanent Marker", cursive'],
+    ['Playfair Display', 'italic 700 1em "Playfair Display", serif'], ['Press Start 2P', '"Press Start 2P", monospace'],
+    ['Rubik Mono One', '"Rubik Mono One", sans-serif'], ['Unifraktur', '"UnifrakturMaguntia", serif'],
+    ['Georgia', 'Georgia, serif'], ['Courier', '"Courier New", monospace'], ['Impact', 'Impact, sans-serif']
+  ];
+  var loaderLetters = [];
+  document.querySelectorAll('[data-shuffle]').forEach(function (word) {
+    var text = word.textContent;
+    word.textContent = '';
+    text.split('').forEach(function (ch) {
+      var span = document.createElement('span');
+      span.className = 'lt';
+      span.textContent = ch;
+      word.appendChild(span);
+      loaderLetters.push(span);
+    });
   });
+  var fontLabel = document.getElementById('loader-font');
+  var settled = 0, pageReady = false, shuffleStart = Date.now(), shuffleTimer = null;
+  function setFace(span, face) {
+    // entries are either a family list or a full font shorthand
+    if (/\d/.test(face.split('"')[0])) { span.style.font = face; }
+    else { span.style.font = ''; span.style.fontFamily = face; }
+  }
+  function shuffle() {
+    var name = '';
+    for (var i = settled; i < loaderLetters.length; i++) {
+      var face = FACES[Math.floor(Math.random() * FACES.length)];
+      setFace(loaderLetters[i], face[1]);
+      loaderLetters[i].classList.toggle('is-hot', Math.random() < 0.12);
+      name = face[0];
+    }
+    if (fontLabel && name) fontLabel.textContent = name;
+    // once the page is ready and the show has run long enough, lock one more letter each beat
+    if (pageReady && Date.now() - shuffleStart > 1500 && settled < loaderLetters.length) {
+      var span = loaderLetters[settled++];
+      span.style.font = '';
+      span.style.fontFamily = '';
+      span.classList.remove('is-hot');
+      span.classList.add('is-set');
+    }
+    if (settled >= loaderLetters.length) {
+      clearInterval(shuffleTimer);
+      if (fontLabel) fontLabel.textContent = 'Funnel Display';
+      setTimeout(finish, 420);
+    }
+  }
+  if (reduced || !loaderLetters.length) {
+    window.addEventListener('load', finish);
+  } else {
+    shuffleTimer = setInterval(shuffle, 85);
+    window.addEventListener('load', function () { pageReady = true; });
+  }
   // Never leave the loader up if a resource hangs
-  setTimeout(finish, 3500);
+  setTimeout(function () { pageReady = true; }, 3500);
+  setTimeout(finish, 6500);
 
   // Stagger index for the animated project visuals
   ['.tiles span', '.hr__person', '.hr__days i'].forEach(function (sel) {
@@ -345,16 +405,24 @@
   var railTrack = document.querySelector('.rail__track');
   var railNow = document.getElementById('rail-now');
   var railCount = railTrack ? railTrack.children.length : 0;
-  var deskApps = document.querySelectorAll('.desk__app');
   var dockButtons = document.querySelectorAll('.desk__dock button');
-  var deskTitle = document.getElementById('desk-title');
+  var blocksCaption = document.getElementById('blocks-caption');
+  // What the 3D blocks are showing for each project
+  var CAPTIONS = [
+    ['25+ modules', 'locked into one platform'],
+    ['A month of attendance', 'weekends pale, leave in red'],
+    ['Objects in space', 'around the headset']
+  ];
   var shownApp = -1;
   function showApp(i) {
     if (i === shownApp) return;
     shownApp = i;
-    deskApps.forEach(function (el, k) { el.classList.toggle('is-on', k === i); });
     dockButtons.forEach(function (el, k) { el.classList.toggle('is-on', k === i); });
-    deskTitle.textContent = dockButtons[i] ? dockButtons[i].textContent : '';
+    if (blocksCaption && CAPTIONS[i]) {
+      blocksCaption.firstElementChild.textContent = CAPTIONS[i][0];
+      blocksCaption.lastElementChild.textContent = CAPTIONS[i][1];
+    }
+    if (!wide()) window.railEased = i / (railCount - 1);
     railNow.textContent = ('0' + (i + 1)).slice(-2);
   }
   // Clicking an app in the dock scrolls the page to that project's stop
@@ -396,6 +464,8 @@
     var wall = { isStatic: true, friction: 0.6 };
     M.Composite.add(engine.world, [
       M.Bodies.rectangle(W / 2, H + 50, W + 400, 100, wall),
+      // a lid, so nothing can be thrown or jolted out of the top
+      M.Bodies.rectangle(W / 2, -50, W + 400, 100, wall),
       M.Bodies.rectangle(-50, H / 2 - 600, 100, H + 2400, wall),
       M.Bodies.rectangle(W + 50, H / 2 - 600, 100, H + 2400, wall)
     ]);
@@ -471,7 +541,7 @@
         var jolt = y - pileLastY;
         if (Math.abs(jolt) > 26) {
           pile.bodies.forEach(function (b) {
-            pile.M.Body.applyForce(b, b.position, { x: (Math.random() - 0.5) * 0.02 * b.mass, y: -Math.min(0.05, Math.abs(jolt) * 0.0009) * b.mass });
+            pile.M.Body.applyForce(b, b.position, { x: (Math.random() - 0.5) * 0.02 * b.mass, y: -Math.min(0.022, Math.abs(jolt) * 0.0005) * b.mass });
           });
         }
         pile.M.Engine.update(pile.engine, 1000 / 60);
@@ -502,6 +572,7 @@
         var along = t * (railCount - 1), whole = Math.min(railCount - 2, Math.floor(along));
         var part = Math.max(0, Math.min(1, (along - whole - 0.3) / 0.4));
         var eased = (whole + part * part * (3 - 2 * part)) / (railCount - 1);
+        window.railEased = eased;   // blocks.js follows this
         railTrack.style.transform = 'translate3d(' + (-eased * distance).toFixed(1) + 'px,0,0)';
         rail.style.setProperty('--rail', t.toFixed(4));
         showApp(Math.round(t * (railCount - 1)));
