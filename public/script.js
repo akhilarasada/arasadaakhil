@@ -99,7 +99,13 @@
     ['Abril Fatface', '"Abril Fatface", serif'], ['Bebas Neue', '"Bebas Neue", sans-serif'],
     ['Playfair Display', 'italic 700 1em "Playfair Display", serif'], ['Rubik Mono One', '"Rubik Mono One", sans-serif'],
     ['Monoton', '"Monoton", sans-serif'], ['Permanent Marker', '"Permanent Marker", cursive'],
-    ['Unifraktur', '"UnifrakturMaguntia", serif'], ['Press Start 2P', '"Press Start 2P", monospace']
+    ['Unifraktur', '"UnifrakturMaguntia", serif'], ['Press Start 2P', '"Press Start 2P", monospace'],
+    ['Anton', '"Anton", sans-serif'], ['Lobster', '"Lobster", cursive'],
+    ['Bungee Shade', '"Bungee Shade", sans-serif'], ['Righteous', '"Righteous", sans-serif'],
+    ['Rye', '"Rye", serif'], ['Special Elite', '"Special Elite", monospace'],
+    ['Bangers', '"Bangers", cursive'], ['Pacifico', '"Pacifico", cursive'],
+    ['Major Mono', '"Major Mono Display", monospace'], ['Fredericka', '"Fredericka the Great", serif'],
+    ['Courier', '"Courier New", monospace'], ['Georgia', 'italic 700 1em Georgia, serif']
   ];
   var mark = loader.querySelector('.loader__mark');
   var fontLabel = document.getElementById('loader-font');
@@ -137,7 +143,8 @@
       var to = logo.getBoundingClientRect(), from = mark.getBoundingClientRect();
       var scale = parseFloat(getComputedStyle(logo).fontSize) / parseFloat(getComputedStyle(mark).fontSize);
       var dx = to.left - from.left;
-      var dy = (to.top + to.height / 2) - (from.height * scale) / 2 - from.top;
+      // the mark scales about its own left-centre, so line the two centres up
+      var dy = (to.top + to.height / 2) - (from.top + from.height / 2);
       loader.classList.add('is-flying');
       mark.style.transform = 'translate(' + dx.toFixed(1) + 'px,' + dy.toFixed(1) + 'px) scale(' + scale.toFixed(4) + ')';
     }, 260 + 820);
@@ -147,9 +154,9 @@
     window.addEventListener('load', finish);
   } else {
     shuffleTimer = setInterval(function () {
-      if (pageReady && Date.now() - shuffleStart > 1500) { settle(); return; }
+      if (pageReady && Date.now() - shuffleStart > 1900) { settle(); return; }
       showFace(FACES[faceIndex++ % FACES.length]);
-    }, 190);
+    }, 85);
     window.addEventListener('load', function () { pageReady = true; });
   }
   // Never leave the loader up if a resource hangs
