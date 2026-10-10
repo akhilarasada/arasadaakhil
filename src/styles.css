@@ -2356,7 +2356,7 @@ html[data-invert] .blocks3d.is-playing .blocks3d__canvas { filter: none; }
   .js .hero__title.is-sweeping .hero__title-wave { filter: none; }
 }
 /* size attributes on these images are only there to reserve their shape while loading */
-.exp__logo img { width: auto; height: auto; }
+.exp__logo:not(.exp__logo--fill) img { width: auto; height: auto; }
 .lightbox img { width: auto; height: auto; }
 
 /* ---------- Nav and hero text: readable to contrast checkers ----------
@@ -2371,6 +2371,3 @@ html[data-invert] .blocks3d.is-playing .blocks3d__canvas { filter: none; }
 .hero__title-wave, .hero__title .hl:hover { color: rgb(225, 53, 56); }
 /* small labels on the stone-coloured section need a darker grey to stay readable */
 .offer .label { color: #3d3b37; }
-/* Sections far below the screen are not laid out or painted until the visitor gets near them.
-   (Not Selected Work, Skillset or Contact: those hold pinned or screen-fixed pieces.) */
-.about3, .stack, .freelance, .exp, .resume, .mcp, .offer { content-visibility: auto; contain-intrinsic-size: auto 900px; }
