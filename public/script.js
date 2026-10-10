@@ -200,20 +200,29 @@
     }
     var tx = 0, ty = 0, cx = 0, cy = 0, started = false;
 
-    document.addEventListener('mousemove', function (e) {
-      tx = e.clientX; ty = e.clientY;
-      if (!started) { cx = tx; cy = ty; started = true; }
-      cursor.classList.add('is-on');
-    });
-    document.addEventListener('mouseover', function (e) {
-      var t = e.target;
+    // Everything a visitor can press, grab or that reacts to hovering turns the dot into the amoeba
+    var ACTIVE = 'a, button, .chip, summary, .pill, .skill, .about3__stats li, .exp__row, ' +
+      '.hero__title .hl, .bigname .ch, .win__bar, .badge3d.is-over';
+    var under = null;
+    function readHover() {
+      var t = under;
+      if (!t || !t.closest) return;
       var labelled = t.closest('[data-cursor]');
       var field = t.closest('input[type="text"], input[type="email"], textarea');
-      var link = t.closest('a, button, .chip');
+      var link = t.closest(ACTIVE);
       if (labelled) label.textContent = labelled.getAttribute('data-cursor');
       cursor.classList.toggle('is-label', !!labelled);
       cursor.classList.toggle('is-text', !labelled && !!field);
       cursor.classList.toggle('is-link', !labelled && !field && !!link);
+    }
+    document.addEventListener('mousemove', function (e) {
+      tx = e.clientX; ty = e.clientY;
+      if (!started) { cx = tx; cy = ty; started = true; }
+      cursor.classList.add('is-on');
+      // Checked on every move, not only on entering an element, because some targets
+      // (the 3D badge inside its canvas) become active without the pointer leaving them
+      under = e.target;
+      readHover();
     });
     document.addEventListener('mousedown', function () { cursor.classList.add('is-down'); });
     document.addEventListener('mouseup', function () { cursor.classList.remove('is-down'); });
@@ -393,8 +402,10 @@
     var bodies = pills.map(function (el, i) {
       var s = sizes[i];
       var body = M.Bodies.rectangle(
-        s.w / 2 + 20 + Math.random() * Math.max(1, W - s.w - 40),
-        -80 - i * 62,
+        // Spread across the box and already inside it, so the skills are on screen at once
+        // and tumble into a heap, instead of arriving one by one from far above
+        Math.max(s.w / 2 + 8, Math.min(W - s.w / 2 - 8, ((i % 6) + 0.5) * (W / 6) + (Math.random() - 0.5) * 60)),
+        s.h / 2 + 10 + Math.floor(i / 6) * (H * 0.13) + Math.random() * 14,
         s.w, s.h,
         { chamfer: { radius: s.h / 2 - 1 }, restitution: 0.35, friction: 0.5, frictionAir: 0.012, angle: (Math.random() - 0.5) * 0.9 }
       );
@@ -412,6 +423,12 @@
     });
     M.Composite.add(engine.world, M.MouseConstraint.create(engine, { mouse: mouse, constraint: { stiffness: 0.18, damping: 0.1 } }));
 
+    // Place them straight away so there is never a frame with every pill stacked in the corner
+    bodies.forEach(function (body, i) {
+      pills[i].style.transform = 'translate3d(' + (body.position.x - sizes[i].w / 2).toFixed(1) + 'px,' +
+        (body.position.y - sizes[i].h / 2).toFixed(1) + 'px,0) rotate(' + body.angle.toFixed(3) + 'rad)';
+    });
+
     pile = { M: M, engine: engine, bodies: bodies, pills: pills, sizes: sizes, visible: true };
   }
   if (pileEl && 'IntersectionObserver' in window) {
@@ -419,7 +436,7 @@
       var inView = entries[0].isIntersecting;
       if (inView && !pile) buildPile();
       if (pile) pile.visible = inView;
-    }, { threshold: 0.15 }).observe(pileEl);
+    }, { threshold: 0.05 }).observe(pileEl);
   }
   // A change of width would leave the walls in the wrong place, so start the pile again
   var pileResize;
