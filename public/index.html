@@ -232,9 +232,26 @@
       <div class="rail">
         <div class="rail__pin">
           <div class="rail__stage">
-            <div class="blocks3d" aria-hidden="true">
+            <div class="blocks3d">
               <p class="blocks3d__caption" id="blocks-caption"><b>25+ modules</b><span>locked into one platform</span></p>
               <p class="blocks3d__hint label">Drag to turn</p>
+              <div class="hud" hidden>
+                <div class="hud__top">
+                  <div><b class="hud__title"></b><p class="hud__rules"></p></div>
+                  <button type="button" class="hud__btn" data-hud="exit">Exit ✕</button>
+                </div>
+                <div class="hud__bar"><span class="hud__status" role="status"></span><span class="hud__tools"></span></div>
+                <div class="hud__win" hidden>
+                  <p class="label">Solved. This one is yours</p>
+                  <p class="hud__code"></p>
+                  <p class="hud__deal">10% off your first project bill. Send me this code and it is applied.</p>
+                  <div class="hud__claim">
+                    <button type="button" class="btn btn--red" data-hud="form">Claim it in the form <span aria-hidden="true">→</span></button>
+                    <a class="link-btn" data-hud="mail" href="#">Or email it <span aria-hidden="true">↗</span></a>
+                  </div>
+                </div>
+                <i class="hud__reticle" aria-hidden="true"></i>
+              </div>
             </div>
 
             <div class="rail__side">
@@ -706,6 +723,5 @@
   <script src="blocks.js"></script>
   <script src="badge.js"></script>
   <script src="extras.js"></script>
-  <script src="games.js"></script>
 </body>
 </html>
