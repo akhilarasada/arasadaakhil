@@ -69,6 +69,11 @@
 
   // Preloader, then hero entrance
   var loader = document.querySelector('.loader');
+  // The 3D pieces further down wait for this, so their set-up never competes with the opening
+  var openedDone;
+  window.__opened = new Promise(function (resolve) { openedDone = resolve; });
+  window.addEventListener('scroll', function () { openedDone(); }, { once: true, passive: true });
+  setTimeout(function () { openedDone(); }, 12000);
   var finished = false;
   function finish() {
     if (finished) return;
@@ -88,6 +93,7 @@
     if (reduced) {
       title.classList.add('is-settled');
       if (window.Liquid) window.Liquid.show();
+      openedDone();
       return;
     }
     var tr = title.getBoundingClientRect(), pr = portrait.getBoundingClientRect();
@@ -107,6 +113,7 @@
       if (fade < 1) { requestAnimationFrame(sweep); return; }
       title.classList.remove('is-sweeping');
       title.classList.add('is-settled');
+      openedDone();
     })(began);
   }
 
@@ -139,7 +146,7 @@
     moved = true;
     setTimeout(function () {
       loader.classList.add('is-collapsing');            // letters tuck in behind the two initials
-    }, 620);
+    }, 420);
     setTimeout(function () {
       // fly the remaining mark onto the logo in the top-left corner
       var logo = document.querySelector('.nav__logo');
@@ -150,13 +157,13 @@
       var dy = (to.top + to.height / 2) - (from.top + from.height / 2);
       loader.classList.add('is-flying');
       mark.style.transform = 'translate(' + dx.toFixed(1) + 'px,' + dy.toFixed(1) + 'px) scale(' + scale.toFixed(4) + ')';
-    }, 620 + 820);
-    setTimeout(finish, 620 + 820 + 900);
+    }, 420 + 820);
+    setTimeout(finish, 420 + 820 + 900);
   }
   if (reduced || !hasLetters || !block) {
     window.addEventListener('load', finish);
   } else {
-    var GLYPHS = '<>/{}[]()=+*#;01', BUILD_MS = 1700, FLICKER_MS = 300;
+    var GLYPHS = '<>/{}[]()=+*#;01', BUILD_MS = 1350, FLICKER_MS = 280;
     var lts = [].slice.call(mark.querySelectorAll('.lt'));
     // each letter keeps its final width while it flickers, so the line never jitters
     var slots = lts.map(function (el) {
@@ -393,7 +400,6 @@
   document.querySelectorAll('.hero__title .line > span').forEach(function (line) {
     var text = line.textContent;
     line.textContent = '';
-    line.setAttribute('aria-label', text);
     text.split('').forEach(function (ch) {
       var span = document.createElement('span');
       span.className = 'hl';
@@ -518,6 +524,16 @@
   // Stack: skills are physical pills that fall into a pile and can be picked up and thrown
   var pileEl = document.getElementById('pile');
   var pile = null;
+  var matterAsked = false;
+  function loadMatter(then) {
+    if (window.Matter) { then(); return; }
+    if (matterAsked) return;
+    matterAsked = true;
+    var s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.20.0/matter.min.js';
+    s.onload = then;
+    document.head.appendChild(s);
+  }
   function buildPile() {
     var M = window.Matter;
     if (!M || !pileEl || reduced) return;
@@ -573,9 +589,9 @@
   if (pileEl && 'IntersectionObserver' in window) {
     new IntersectionObserver(function (entries) {
       var inView = entries[0].isIntersecting;
-      if (inView && !pile) buildPile();
+      if (inView && !pile) loadMatter(buildPile);
       if (pile) pile.visible = inView;
-    }, { threshold: 0.05 }).observe(pileEl);
+    }, { rootMargin: '500px 0px' }).observe(pileEl);
   }
   // A change of width would leave the walls in the wrong place, so start the pile again
   var pileResize;

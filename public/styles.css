@@ -1,3 +1,7 @@
+/* The two typefaces, served from this site so the page does not wait on another server */
+@font-face { font-family: "Archivo"; font-style: normal; font-weight: 400 600; font-stretch: 100%; font-display: swap; src: url(assets/fonts/archivo.woff2) format("woff2"); }
+@font-face { font-family: "Funnel Display"; font-style: normal; font-weight: 400 600; font-display: swap; src: url(assets/fonts/funnel-display.woff2) format("woff2"); }
+
 :root {
   --bg: #efeeeb;
   --ink: #0a0a0a;
@@ -2341,3 +2345,16 @@ html[data-invert] .blocks3d.is-playing .blocks3d__canvas { filter: none; }
   .hud__rules { display: none; }
   .play-btn { font-size: 13px; padding: 11px 16px; }
 }
+
+/* ---------- Loading speed ---------- */
+/* The hero copy is painted from the first frame (the loader covers it) and only slides in
+   afterwards, so the browser is not left waiting for it to fade up */
+.js .hero .reveal { opacity: 1; }
+/* Phones skip the wave's distortion filter, which is the most expensive thing on the page;
+   the red band still crosses the name */
+@media (max-width: 900px) {
+  .js .hero__title.is-sweeping .hero__title-wave { filter: none; }
+}
+/* size attributes on these images are only there to reserve their shape while loading */
+.exp__logo img { width: auto; height: auto; }
+.lightbox img { width: auto; height: auto; }

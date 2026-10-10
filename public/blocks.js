@@ -686,7 +686,7 @@
   });
   if ('IntersectionObserver' in window) {
     new IntersectionObserver(function (entries, obs) {
-      if (entries[0].isIntersecting) { obs.disconnect(); go(); }
+      if (entries[0].isIntersecting) { obs.disconnect(); (window.__opened || Promise.resolve()).then(go); }
     }, { rootMargin: '800px 0px' }).observe(host);
   } else {
     go();

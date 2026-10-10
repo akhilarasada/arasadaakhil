@@ -1,0 +1,16 @@
+# Fonts never change under the same name
+/assets/fonts/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Images, certificates and the resume: a month
+/assets/*
+  Cache-Control: public, max-age=2592000
+
+# Styles and scripts are requested with a ?v= stamp that changes on every release
+/*.css
+  Cache-Control: public, max-age=31536000, immutable
+/*.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/favicon.ico
+  Cache-Control: public, max-age=2592000

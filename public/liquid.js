@@ -99,13 +99,13 @@
   }
 
   var points = new Float32Array(POINTS * 3), next = 0;
-  var last = null, visible = true, started = performance.now();
+  var last = null, visible = true, started = performance.now(), tick = 0;
   // Where the arriving ripple is, across the photo: below 0 nothing shows, above 1 all of it
   var frontAt = -1, frontStrength = 0, arrived = false;
 
   function resize() {
     var r = holder.getBoundingClientRect();
-    var scale = Math.min(window.devicePixelRatio || 1, 1.5);
+    var scale = Math.min(window.devicePixelRatio || 1, window.innerWidth <= 900 ? 1 : 1.5);
     canvas.width = Math.max(2, Math.round(r.width * scale));
     canvas.height = Math.max(2, Math.round(r.height * scale));
     gl.viewport(0, 0, canvas.width, canvas.height);
@@ -133,8 +133,10 @@
   function frame(now) {
     requestAnimationFrame(frame);
     if (!visible || document.hidden) return;
-    for (var i = 0; i < POINTS; i++) points[i * 3 + 2] *= 0.968;
-
+    var busy = !arrived || frontStrength > 0.001;
+    for (var i = 0; i < POINTS; i++) { points[i * 3 + 2] *= 0.968; if (points[i * 3 + 2] > 0.002) busy = true; }
+    // with no ripple running only the slow swell is left, which does not need every frame
+    if (!busy && (tick++ % 3)) return;
 
     gl.uniform1f(U.uAspect, canvas.width / canvas.height);
     gl.uniform1f(U.uTime, (now - started) / 1000);

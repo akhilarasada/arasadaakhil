@@ -344,7 +344,7 @@
   }
   if ('IntersectionObserver' in window) {
     new IntersectionObserver(function (entries, obs) {
-      if (entries[0].isIntersecting) { obs.disconnect(); load(); }
+      if (entries[0].isIntersecting) { obs.disconnect(); (window.__opened || Promise.resolve()).then(load); }
     }, { rootMargin: '700px 0px' }).observe(host);
   } else {
     load();
