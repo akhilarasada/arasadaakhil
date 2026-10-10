@@ -1204,6 +1204,18 @@ html[data-invert] .cert-peek,
 html[data-invert] .lightbox img,
 html[data-invert] .paper__sheet img { filter: invert(1) hue-rotate(180deg); }
 
+/* The hero photo keeps its normal look in the inverted mode: it is flipped back, and laid
+   over the dark page as a photograph with soft edges instead of being multiplied into it */
+html[data-invert] .hero__portrait { mix-blend-mode: normal; filter: invert(1) hue-rotate(180deg); }
+/* Without the multiply blend the photo's own edges would show, so fade them out sooner */
+html[data-invert] .hero__liquid,
+html[data-invert] .hero__portrait img {
+  -webkit-mask-image: radial-gradient(ellipse 47% 62% at 50% 56%, #000 38%, transparent 76%);
+  mask-image: radial-gradient(ellipse 47% 62% at 50% 56%, #000 38%, transparent 76%);
+  -webkit-mask-composite: source-over;
+  mask-composite: add;
+}
+
 /* The flood: the new colours pour out from where you clicked */
 ::view-transition-old(root), ::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
 ::view-transition-old(root) { z-index: 1; }
@@ -1361,11 +1373,9 @@ a:hover > .roll > span { transform: translateY(-100%); }
 /* The name is drawn in "difference" over the photo, so this teal shows as the site's red */
 .hero__title .hl:hover { color: rgb(30, 202, 199); }
 
-/* The photo is unveiled from the bottom up while it settles back from a close-up */
-.js .hero__portrait { clip-path: inset(100% 0 0 0); transition: clip-path 1.5s cubic-bezier(0.77, 0, 0.18, 1) 0.25s; }
-.js .loaded .hero__portrait { clip-path: inset(0 0 0 0); }
-.js .hero__liquid, .js .hero__portrait img { opacity: 1; transform: scale(1.2); transition: transform 2.4s var(--ease) 0.25s; }
-.js .loaded .hero__liquid, .js .loaded .hero__portrait img { transform: none; }
+/* The photo arrives after the title: as a ripple when drawn by liquid.js, as a fade otherwise */
+.js .hero__portrait:not(.is-shown) img { opacity: 0; }
+.js .hero__portrait img { transform: none; transition: opacity 1.4s ease; }
 
 /* ---------- About: by day, by night ---------- */
 .duo { display: flex; gap: 12px; margin-top: clamp(40px, 6vw, 90px); min-height: 340px; }
@@ -1844,13 +1854,37 @@ html[data-invert] .win__media img { filter: invert(1) hue-rotate(180deg); }
   .desk__enter { max-height: 42vh; }
 }
 
-/* ---------- Loader: the name tries on typefaces ---------- */
-.loader__mark { height: 1.5em; }
-.loader__word { display: inline-flex; align-items: center; }
-/* Fixed-width slots so the line holds still while every letter changes face */
-.loader__word .lt { display: inline-block; width: 0.82em; text-align: center; line-height: 1; transition: color 0.2s; }
-.loader__word .lt.is-set { width: auto; min-width: 0.5em; padding: 0 0.01em; }
-.loader__word .lt.is-hot { color: var(--red); }
+/* ---------- Loader: the name becomes the logo ---------- */
+.loader { transition: opacity 0.45s ease, visibility 0s 0.45s; }
+.loader.done { transform: none; opacity: 0; visibility: hidden; }
+.loader__mark {
+  gap: 0;
+  height: 1.5em;
+  transform-origin: 0 50%;
+  transition: transform 0.85s cubic-bezier(0.7, 0, 0.2, 1);
+  white-space: nowrap;
+}
+.loader__word { display: inline-flex; align-items: baseline; transition: margin 0.6s var(--ease); }
+.loader__word + .loader__word { margin-left: 0.3em; }
+.loader__word .lt { display: inline-block; line-height: 1; }
+/* the two initials are red from the start: they are what the name is about to become */
+.loader__word .lt--cap { color: var(--red); transition: color 0.5s; }
+.loader__word .lt--rest { max-width: 1.4em; transition: max-width 0.55s var(--ease), opacity 0.4s ease, transform 0.55s var(--ease); }
+.loader__block {
+  width: 0.45em;
+  height: 0.45em;
+  margin-left: 0.3em;
+  align-self: center;
+  animation: none;
+  transition: background 0.5s;
+}
+/* step 1: the other letters slide in behind their initial and are gone */
+.loader.is-collapsing .lt--rest { max-width: 0; opacity: 0; transform: translateX(-0.5em); }
+.loader.is-collapsing .loader__word + .loader__word { margin-left: 0; }
+.loader.is-collapsing .loader__font { opacity: 0; }
+/* step 2: what is left turns black and travels to the corner */
+.loader.is-flying .lt--cap { color: var(--ink); }
+.loader.is-flying .loader__block { background: var(--ink); }
 .loader__font {
   position: absolute;
   left: 0; right: 0;
@@ -1860,6 +1894,7 @@ html[data-invert] .win__media img { filter: invert(1) hue-rotate(180deg); }
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--muted);
+  transition: opacity 0.3s;
 }
 
 /* ---------- Selected Work: the 3D blocks ---------- */

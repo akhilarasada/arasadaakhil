@@ -77,69 +77,84 @@
     document.body.classList.add('loaded');
     // Hero copy comes in with the name, not on scroll
     document.querySelectorAll('.hero .reveal').forEach(function (el) { el.classList.add('in'); });
+
+    // The title runs in first. When its last letter lands, a ripple starts at the point where
+    // the title meets the photo, and the photo arrives behind that ripple.
+    var letters = document.querySelectorAll('.hero__title .hl');
+    setTimeout(function () {
+      var portrait = document.querySelector('.hero__portrait');
+      var line = document.querySelector('.hero__title .line');
+      var lastLetter = line && line.querySelector('.hl:last-child');
+      var r = (lastLetter || portrait).getBoundingClientRect();
+      portrait.classList.add('is-shown');
+      if (window.Liquid) window.Liquid.reveal(r.left + r.width * 0.5, r.top + r.height * 0.55);
+    }, reduced ? 0 : letters.length * 55 + 850);
   }
 
-  // While the page loads, every letter of the name keeps changing typeface. When the page is
-  // ready the letters settle left to right into the site's own face, and the loader lifts.
+  // The loader tells the story of the logo. The name is shown with its two initials in red and
+  // tries on one typeface at a time. When the page is ready it settles into the site's own face,
+  // the other letters tuck in behind their initial and vanish, and what is left ("AA" and the
+  // block) turns black and travels to the top-left corner, where it becomes the site's logo.
   var FACES = [
     ['Abril Fatface', '"Abril Fatface", serif'], ['Bebas Neue', '"Bebas Neue", sans-serif'],
-    ['Bungee Shade', '"Bungee Shade", sans-serif'], ['Monoton', '"Monoton", sans-serif'],
-    ['Pacifico', '"Pacifico", cursive'], ['Permanent Marker', '"Permanent Marker", cursive'],
-    ['Playfair Display', 'italic 700 1em "Playfair Display", serif'], ['Press Start 2P', '"Press Start 2P", monospace'],
-    ['Rubik Mono One', '"Rubik Mono One", sans-serif'], ['Unifraktur', '"UnifrakturMaguntia", serif'],
-    ['Georgia', 'Georgia, serif'], ['Courier', '"Courier New", monospace'], ['Impact', 'Impact, sans-serif']
+    ['Playfair Display', 'italic 700 1em "Playfair Display", serif'], ['Rubik Mono One', '"Rubik Mono One", sans-serif'],
+    ['Monoton', '"Monoton", sans-serif'], ['Permanent Marker', '"Permanent Marker", cursive'],
+    ['Unifraktur', '"UnifrakturMaguntia", serif'], ['Press Start 2P', '"Press Start 2P", monospace']
   ];
-  var loaderLetters = [];
+  var mark = loader.querySelector('.loader__mark');
+  var fontLabel = document.getElementById('loader-font');
+  var hasLetters = false;
   document.querySelectorAll('[data-shuffle]').forEach(function (word) {
     var text = word.textContent;
     word.textContent = '';
-    text.split('').forEach(function (ch) {
+    text.split('').forEach(function (ch, i) {
       var span = document.createElement('span');
-      span.className = 'lt';
+      span.className = i === 0 ? 'lt lt--cap' : 'lt lt--rest';
       span.textContent = ch;
+      // the furthest letters leave first, so each word closes up toward its initial
+      span.style.transitionDelay = ((text.length - 1 - i) * 0.045).toFixed(3) + 's';
       word.appendChild(span);
-      loaderLetters.push(span);
+      hasLetters = true;
     });
   });
-  var fontLabel = document.getElementById('loader-font');
-  var settled = 0, pageReady = false, shuffleStart = Date.now(), shuffleTimer = null;
-  function setFace(span, face) {
+
+  var pageReady = false, shuffleStart = Date.now(), faceIndex = 0, shuffleTimer = null;
+  function showFace(face) {
     // entries are either a family list or a full font shorthand
-    if (/\d/.test(face.split('"')[0])) { span.style.font = face; }
-    else { span.style.font = ''; span.style.fontFamily = face; }
+    if (face && /\d/.test(face[1].split('"')[0])) { mark.style.fontFamily = ''; mark.style.font = face[1]; }
+    else { mark.style.font = ''; mark.style.fontFamily = face ? face[1] : ''; }
+    if (fontLabel) fontLabel.textContent = face ? face[0] : 'Funnel Display';
   }
-  function shuffle() {
-    var name = '';
-    for (var i = settled; i < loaderLetters.length; i++) {
-      var face = FACES[Math.floor(Math.random() * FACES.length)];
-      setFace(loaderLetters[i], face[1]);
-      loaderLetters[i].classList.toggle('is-hot', Math.random() < 0.12);
-      name = face[0];
-    }
-    if (fontLabel && name) fontLabel.textContent = name;
-    // once the page is ready and the show has run long enough, lock one more letter each beat
-    if (pageReady && Date.now() - shuffleStart > 1500 && settled < loaderLetters.length) {
-      var span = loaderLetters[settled++];
-      span.style.font = '';
-      span.style.fontFamily = '';
-      span.classList.remove('is-hot');
-      span.classList.add('is-set');
-    }
-    if (settled >= loaderLetters.length) {
-      clearInterval(shuffleTimer);
-      if (fontLabel) fontLabel.textContent = 'Funnel Display';
-      setTimeout(finish, 420);
-    }
+  function settle() {
+    clearInterval(shuffleTimer);
+    showFace(null);
+    setTimeout(function () {
+      loader.classList.add('is-collapsing');            // letters tuck in behind the two initials
+    }, 260);
+    setTimeout(function () {
+      // fly the remaining mark onto the logo in the top-left corner
+      var logo = document.querySelector('.nav__logo');
+      var to = logo.getBoundingClientRect(), from = mark.getBoundingClientRect();
+      var scale = parseFloat(getComputedStyle(logo).fontSize) / parseFloat(getComputedStyle(mark).fontSize);
+      var dx = to.left - from.left;
+      var dy = (to.top + to.height / 2) - (from.height * scale) / 2 - from.top;
+      loader.classList.add('is-flying');
+      mark.style.transform = 'translate(' + dx.toFixed(1) + 'px,' + dy.toFixed(1) + 'px) scale(' + scale.toFixed(4) + ')';
+    }, 260 + 820);
+    setTimeout(finish, 260 + 820 + 900);
   }
-  if (reduced || !loaderLetters.length) {
+  if (reduced || !hasLetters) {
     window.addEventListener('load', finish);
   } else {
-    shuffleTimer = setInterval(shuffle, 85);
+    shuffleTimer = setInterval(function () {
+      if (pageReady && Date.now() - shuffleStart > 1500) { settle(); return; }
+      showFace(FACES[faceIndex++ % FACES.length]);
+    }, 190);
     window.addEventListener('load', function () { pageReady = true; });
   }
   // Never leave the loader up if a resource hangs
   setTimeout(function () { pageReady = true; }, 3500);
-  setTimeout(finish, 6500);
+  setTimeout(finish, 8000);
 
   // Stagger index for the animated project visuals
   ['.tiles span', '.hr__person', '.hr__days i'].forEach(function (sel) {
@@ -770,7 +785,13 @@
     });
   });
   document.getElementById('consent-open').addEventListener('click', showConsent);
-  if (consent !== 'yes' && consent !== 'no') setTimeout(showConsent, 2600);
+  // Ask only once the opening sequence has played out, never over the loader
+  if (consent !== 'yes' && consent !== 'no') {
+    (function ask() {
+      if (document.body.classList.contains('loaded')) setTimeout(showConsent, 3800);
+      else setTimeout(ask, 300);
+    })();
+  }
 
   document.getElementById('year').textContent = new Date().getFullYear();
 })();

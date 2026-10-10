@@ -1,5 +1,7 @@
 // Liquid portrait: the hero photo is drawn in WebGL so it behaves like the surface of water.
-// Moving the pointer across the hero sends rings through it, and the rings split off a red edge.
+// It arrives as a ripple: Liquid.reveal(x, y) starts a ring at that point of the screen and the
+// photo appears behind the ring as it spreads. Afterwards, moving the pointer across the hero
+// sends smaller rings through it, and the rings split off a red edge.
 // If WebGL is missing the plain <img> simply stays.
 
 (function () {
@@ -10,19 +12,18 @@
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
   var POINTS = 10;
+  var REVEAL_MS = 1900;
   var canvas = document.createElement('canvas');
-  var gl = canvas.getContext('webgl', { premultipliedAlpha: false, antialias: false });
+  var gl = canvas.getContext('webgl', { premultipliedAlpha: false, antialias: false, alpha: true });
   if (!gl) return;
 
   var VERT = 'attribute vec2 p; varying vec2 vUv; void main(){ vUv = p * 0.5 + 0.5; gl_Position = vec4(p, 0.0, 1.0); }';
   var FRAG = [
     'precision mediump float;',
-    'uniform sampler2D uTex; uniform float uAspect; uniform float uTime; uniform float uReveal;',
+    'uniform sampler2D uTex; uniform float uAspect; uniform float uTime;',
+    'uniform vec2 uOrigin; uniform float uReveal; uniform float uFront;',
     'uniform vec3 uP[' + POINTS + '];',
     'varying vec2 vUv;',
-    'float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }',
-    'float noise(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);',
-    '  return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y); }',
     // Same look the photo had in CSS: black and white, a touch more contrast and brightness
     'float tone(vec3 c){ float g = dot(c, vec3(0.299, 0.587, 0.114)); return clamp(((g - 0.5) * 1.12 + 0.5) * 1.1, 0.0, 1.0); }',
     'void main(){',
@@ -35,19 +36,22 @@
     '    disp += normalize(d + 1e-5) * sin(r * 44.0 - uTime * 9.0) * exp(-r * 6.5) * pt.z;',
     '  }',
     '  disp *= 0.038;',
+    // The arrival: a band of waves travelling outward from where the title handed over
+    '  vec2 fromOrigin = vUv - uOrigin; fromOrigin.x *= uAspect;',
+    '  float dist = length(fromOrigin);',
+    '  float edge = dist - uReveal;',
+    '  disp += normalize(fromOrigin + 1e-5) * sin(edge * 42.0) * exp(-abs(edge) * 9.0) * 0.03 * uFront;',
     // A slow swell so the surface is never perfectly still
     '  disp += 0.0022 * vec2(sin(vUv.y * 9.0 + uTime * 0.9), cos(vUv.x * 8.0 + uTime * 0.7));',
     '  float amount = length(disp);',
     '  float base = tone(texture2D(uTex, clamp(vUv - disp, 0.0, 1.0)).rgb);',
     '  float ghost = tone(texture2D(uTex, clamp(vUv - disp * 2.4, 0.0, 1.0)).rgb);',
     '  vec3 col = vec3(base);',
-    // Where the ripple drags a darker copy of the image out of place, that edge prints in red
-    '  float edge = clamp((base - ghost) * 3.0, 0.0, 1.0) * smoothstep(0.003, 0.012, amount);',
-    '  col = mix(col, vec3(0.82, 0.14, 0.14), edge);',
-    // The photo develops out of grain on load. White is invisible under the multiply blend.
-    '  float n = noise(vUv * vec2(70.0, 58.0));',
-    '  col = mix(vec3(1.0), col, smoothstep(n - 0.18, n + 0.18, uReveal * 1.36 - 0.18));',
-    '  gl_FragColor = vec4(col, 1.0);',
+    // Where a ripple drags a darker copy of the image out of place, that edge prints in red
+    '  float fringe = clamp((base - ghost) * 3.0, 0.0, 1.0) * smoothstep(0.003, 0.012, amount);',
+    '  col = mix(col, vec3(0.82, 0.14, 0.14), fringe);',
+    // Nothing is drawn ahead of the arriving ring
+    '  gl_FragColor = vec4(col, smoothstep(0.0, -0.14, edge));',
     '}'
   ].join('\n');
 
@@ -72,6 +76,7 @@
       return false;
     }
     gl.useProgram(prog);
+    gl.clearColor(0, 0, 0, 0);
     var quad = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, quad);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
@@ -88,13 +93,14 @@
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 
-    ['uTex', 'uAspect', 'uTime', 'uReveal', 'uP'].forEach(function (n) { U[n] = gl.getUniformLocation(prog, n); });
+    ['uTex', 'uAspect', 'uTime', 'uOrigin', 'uReveal', 'uFront', 'uP'].forEach(function (n) { U[n] = gl.getUniformLocation(prog, n); });
     gl.uniform1i(U.uTex, 0);
     return true;
   }
 
   var points = new Float32Array(POINTS * 3), next = 0;
   var last = null, visible = true, started = performance.now();
+  var origin = [0.5, 0.5], revealAt = null, pendingReveal = null, live = false;
 
   function resize() {
     var r = holder.getBoundingClientRect();
@@ -103,14 +109,18 @@
     canvas.height = Math.max(2, Math.round(r.height * scale));
     gl.viewport(0, 0, canvas.width, canvas.height);
   }
+  function toUv(clientX, clientY) {
+    var r = holder.getBoundingClientRect();
+    return [(clientX - r.left) / r.width, 1 - (clientY - r.top) / r.height];
+  }
 
   function drop(clientX, clientY) {
-    var r = holder.getBoundingClientRect();
-    var x = (clientX - r.left) / r.width, y = 1 - (clientY - r.top) / r.height;
+    if (revealAt === null) return;     // the pointer does nothing until the photo has arrived
+    var uv = toUv(clientX, clientY);
     if (last) {
       var dx = clientX - last.x, dy = clientY - last.y, dist = Math.sqrt(dx * dx + dy * dy);
       if (dist < 14) return;                       // one ring per stretch of movement, not per pixel
-      points[next * 3] = x; points[next * 3 + 1] = y;
+      points[next * 3] = uv[0]; points[next * 3 + 1] = uv[1];
       points[next * 3 + 2] = Math.min(1, 0.35 + dist / 90);
       next = (next + 1) % POINTS;
     }
@@ -120,16 +130,35 @@
   hero.addEventListener('touchmove', function (e) { var t = e.touches[0]; if (t) drop(t.clientX, t.clientY); }, { passive: true });
 
   function frame(now) {
-    if (!visible || document.hidden) { requestAnimationFrame(frame); return; }
+    requestAnimationFrame(frame);
+    if (!visible || document.hidden) return;
     for (var i = 0; i < POINTS; i++) points[i * 3 + 2] *= 0.968;
 
+    // The ring grows from nothing to past the far corner, easing out as it goes
+    var t = revealAt === null ? 0 : Math.max(0, Math.min(1, (now - revealAt) / REVEAL_MS));
+    var eased = 1 - Math.pow(1 - t, 3);
     gl.uniform1f(U.uAspect, canvas.width / canvas.height);
     gl.uniform1f(U.uTime, (now - started) / 1000);
-    gl.uniform1f(U.uReveal, 1.0);   // the entrance is a CSS wipe now
+    gl.uniform2f(U.uOrigin, origin[0], origin[1]);
+    gl.uniform1f(U.uReveal, eased * 2.2);
+    gl.uniform1f(U.uFront, 1 - t);
     gl.uniform3fv(U.uP, points);
+    gl.clear(gl.COLOR_BUFFER_BIT);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-    requestAnimationFrame(frame);
   }
+
+  function begin(clientX, clientY) {
+    origin = toUv(clientX, clientY);
+    revealAt = performance.now();
+  }
+
+  // Called by script.js once the title has finished running in
+  window.Liquid = {
+    reveal: function (clientX, clientY) {
+      if (live) begin(clientX, clientY);
+      else pendingReveal = [clientX, clientY];
+    }
+  };
 
   function start() {
     if (!setup()) return;
@@ -142,6 +171,8 @@
     if ('IntersectionObserver' in window) {
       new IntersectionObserver(function (entries) { visible = entries[0].isIntersecting; }).observe(hero);
     }
+    live = true;
+    if (pendingReveal) begin(pendingReveal[0], pendingReveal[1]);
     requestAnimationFrame(frame);
   }
   if (img.complete && img.naturalWidth) start();
