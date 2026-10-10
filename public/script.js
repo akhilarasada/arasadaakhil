@@ -78,64 +78,44 @@
     // Hero copy comes in with the name, not on scroll
     document.querySelectorAll('.hero .reveal').forEach(function (el) { el.classList.add('in'); });
 
-    // One ripple crosses the whole hero from left to right. Each letter of the name appears as
-    // the ripple reaches it, red while the ripple is on it and black once it has passed. The same
-    // ripple carries straight on into the photo and uncovers it, so name and photo arrive together.
+    // One ripple crosses the whole hero from left to right. The name is uncovered continuously
+    // behind it, like a wave washing over the letters: a rippling red band rides the front, and
+    // the letters are left black and still once it has passed. The same ripple carries straight
+    // on into the photo and uncovers it, so name and photo arrive in one pass.
     var portrait = document.querySelector('.hero__portrait');
-    var letters = Array.prototype.slice.call(document.querySelectorAll('.hero__title .hl'));
+    var title = document.querySelector('.hero__title');
     portrait.classList.add('is-shown');
     if (reduced) {
-      letters.forEach(function (el) { el.classList.add('is-hit', 'is-done'); });
+      title.classList.add('is-settled');
       if (window.Liquid) window.Liquid.show();
       return;
     }
-    var pr = portrait.getBoundingClientRect();
-    // Letters that sit on the dark figure need true red: the title is drawn in "difference",
-    // which turns the usual teal into red on the pale page but would leave it teal over the photo
-    var figureLeft = pr.left + pr.width * 0.36, figureRight = pr.left + pr.width * 0.70;
-    var spans = letters.map(function (el) {
-      var r = el.getBoundingClientRect(), mid = (r.left + r.right) / 2;
-      return { el: el, left: r.left, right: r.right, onFigure: mid > figureLeft && mid < figureRight };
-    });
-    var from = Math.min(pr.left, spans.length ? spans[0].left : 0) - 30;
-    var to = Math.max(pr.right, spans.length ? spans[spans.length - 1].right : 0) + pr.width * 0.25;
-    var tail = window.innerWidth * 0.07;          // how long a letter stays red behind the ripple
-    var SWEEP_MS = 2900, FADE_MS = 700, began = performance.now();
+    var tr = title.getBoundingClientRect(), pr = portrait.getBoundingClientRect();
+    var from = Math.min(pr.left, tr.left) - 60;
+    var to = Math.max(pr.right, tr.right) + pr.width * 0.25 + 130;
+    var SWEEP_MS = 3000, FADE_MS = 700, began = performance.now();
+    title.classList.add('is-sweeping');
     (function sweep(now) {
       var t = Math.min(1, (now - began) / SWEEP_MS);
       // steady across the name, easing off as it leaves the photo
       var x = from + (to - from) * (1 - Math.pow(1 - t, 1.6));
-      for (var i = 0; i < spans.length; i++) {
-        var s = spans[i];
-        if (x >= s.left) s.el.classList.add('is-hit');
-        if (s.onFigure && x >= s.right) s.el.classList.add('is-over');   // the photo is under it now
-        if (x >= s.right + tail) s.el.classList.add('is-done');
-      }
+      title.style.setProperty('--fx', (x - tr.left).toFixed(1) + 'px');
       var fade = Math.max(0, (now - began - SWEEP_MS) / FADE_MS);
-      if (window.Liquid) window.Liquid.setFront(x, Math.max(0, 1 - fade));
-      if (fade < 1) requestAnimationFrame(sweep);
-      else letters.forEach(function (el) { el.classList.add('is-hit', 'is-done'); });
+      // The photo is uncovered just behind the red band, so the band always crosses pale page
+      // and stays red; over the dark photo the title's blend mode would turn it teal
+      if (window.Liquid) window.Liquid.setFront(x - 130, Math.max(0, 1 - fade));
+      if (fade < 1) { requestAnimationFrame(sweep); return; }
+      title.classList.remove('is-sweeping');
+      title.classList.add('is-settled');
     })(began);
   }
 
-  // The loader tells the story of the logo. The name is shown with its two initials in red and
-  // tries on one typeface at a time. When the page is ready it settles into the site's own face,
-  // the other letters tuck in behind their initial and vanish, and what is left ("AA" and the
-  // block) turns black and travels to the top-left corner, where it becomes the site's logo.
-  var FACES = [
-    ['Abril Fatface', '"Abril Fatface", serif'], ['Bebas Neue', '"Bebas Neue", sans-serif'],
-    ['Playfair Display', 'italic 700 1em "Playfair Display", serif'], ['Rubik Mono One', '"Rubik Mono One", sans-serif'],
-    ['Monoton', '"Monoton", sans-serif'], ['Permanent Marker', '"Permanent Marker", cursive'],
-    ['Unifraktur', '"UnifrakturMaguntia", serif'], ['Press Start 2P', '"Press Start 2P", monospace'],
-    ['Anton', '"Anton", sans-serif'], ['Lobster', '"Lobster", cursive'],
-    ['Bungee Shade', '"Bungee Shade", sans-serif'], ['Righteous', '"Righteous", sans-serif'],
-    ['Rye', '"Rye", serif'], ['Special Elite', '"Special Elite", monospace'],
-    ['Bangers', '"Bangers", cursive'], ['Pacifico', '"Pacifico", cursive'],
-    ['Major Mono', '"Major Mono Display", monospace'], ['Fredericka', '"Fredericka the Great", serif'],
-    ['Courier', '"Courier New", monospace'], ['Georgia', 'italic 700 1em Georgia, serif']
-  ];
+  // The loader tells the story of the logo. The name is first signed by hand, a pen writing it
+  // left to right and underlining it. The signature then becomes type, with the two initials in
+  // red. The other letters tuck in behind their initial and vanish, and what is left ("AA" and
+  // the block) turns black and travels to the top-left corner, where it becomes the site's logo.
   var mark = loader.querySelector('.loader__mark');
-  var fontLabel = document.getElementById('loader-font');
+  var sign = loader.querySelector('.loader__sign');
   var hasLetters = false;
   document.querySelectorAll('[data-shuffle]').forEach(function (word) {
     var text = word.textContent;
@@ -151,19 +131,14 @@
     });
   });
 
-  var pageReady = false, shuffleStart = Date.now(), faceIndex = 0, shuffleTimer = null;
-  function showFace(face) {
-    // entries are either a family list or a full font shorthand
-    if (face && /\d/.test(face[1].split('"')[0])) { mark.style.fontFamily = ''; mark.style.font = face[1]; }
-    else { mark.style.font = ''; mark.style.fontFamily = face ? face[1] : ''; }
-    if (fontLabel) fontLabel.textContent = face ? face[0] : 'Funnel Display';
-  }
+  var pageReady = false, signed = false, moved = false;
   function settle() {
-    clearInterval(shuffleTimer);
-    showFace(null);
+    if (moved || !pageReady || !signed) return;
+    moved = true;
+    loader.classList.add('is-typed');                   // the signature gives way to the typed name
     setTimeout(function () {
       loader.classList.add('is-collapsing');            // letters tuck in behind the two initials
-    }, 260);
+    }, 620);
     setTimeout(function () {
       // fly the remaining mark onto the logo in the top-left corner
       var logo = document.querySelector('.nav__logo');
@@ -174,21 +149,39 @@
       var dy = (to.top + to.height / 2) - (from.top + from.height / 2);
       loader.classList.add('is-flying');
       mark.style.transform = 'translate(' + dx.toFixed(1) + 'px,' + dy.toFixed(1) + 'px) scale(' + scale.toFixed(4) + ')';
-    }, 260 + 820);
-    setTimeout(finish, 260 + 820 + 900);
+    }, 620 + 820);
+    setTimeout(finish, 620 + 820 + 900);
   }
-  if (reduced || !hasLetters) {
+  if (reduced || !hasLetters || !sign) {
+    loader.classList.add('is-typed');
     window.addEventListener('load', finish);
   } else {
-    shuffleTimer = setInterval(function () {
-      if (pageReady && Date.now() - shuffleStart > 1900) { settle(); return; }
-      showFace(FACES[faceIndex++ % FACES.length]);
-    }, 85);
-    window.addEventListener('load', function () { pageReady = true; });
+    // Write the signature: uncover it left to right with a pen point riding the edge
+    var WRITE_MS = 1500, wroteAt = null;
+    var write = function (now) {
+      if (wroteAt === null) wroteAt = now;
+      var t = Math.min(1, (now - wroteAt) / WRITE_MS);
+      // a hand speeds up and slows down as it writes
+      var p = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+      sign.style.setProperty('--w', (p * 104 - 2).toFixed(2) + '%');
+      sign.style.setProperty('--bob', (Math.sin(t * 38) * 9).toFixed(1) + 'px');
+      if (t < 1) { requestAnimationFrame(write); return; }
+      loader.classList.add('is-underlined');            // the flourish under the name
+      setTimeout(function () { signed = true; settle(); }, 720);
+    };
+    var beginWriting = function () { requestAnimationFrame(write); };
+    // wait for the handwriting face, but never for long
+    if (document.fonts && document.fonts.load) {
+      var fallback = setTimeout(beginWriting, 1200);
+      document.fonts.load('60px "Mrs Saint Delafield"').then(function () { clearTimeout(fallback); beginWriting(); }, function () {});
+    } else {
+      beginWriting();
+    }
+    window.addEventListener('load', function () { pageReady = true; settle(); });
   }
   // Never leave the loader up if a resource hangs
-  setTimeout(function () { pageReady = true; }, 3500);
-  setTimeout(finish, 8000);
+  setTimeout(function () { pageReady = true; signed = true; settle(); }, 5000);
+  setTimeout(finish, 9000);
 
   // Stagger index for the animated project visuals
   ['.tiles span', '.hr__person', '.hr__days i'].forEach(function (sel) {
@@ -391,6 +384,18 @@
       line.appendChild(span);
     });
   });
+
+  // A second copy of the name, in red, sits exactly over the first. During the opening only the
+  // thin band of it at the ripple's front is shown, and that band is what gets distorted.
+  (function () {
+    var title = document.querySelector('.hero__title');
+    if (!title) return;
+    var wave = document.createElement('span');
+    wave.className = 'hero__title-wave';
+    wave.setAttribute('aria-hidden', 'true');
+    Array.prototype.forEach.call(title.querySelectorAll('.line'), function (line) { wave.appendChild(line.cloneNode(true)); });
+    title.appendChild(wave);
+  })();
 
   // Nav links roll their text on hover
   document.querySelectorAll('.nav__links a').forEach(function (a) {
