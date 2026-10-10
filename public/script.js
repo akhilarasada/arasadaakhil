@@ -24,6 +24,7 @@
       else fetch('/api/track', { method: 'POST', body: data, keepalive: true });
     } catch (e) { /* tracking must never break the page */ }
   }
+  window.portfolioTrack = track;   // used by os.js
   window.addEventListener('load', function () { track('pageview'); });
 
   // Time on page and how far down the visitor scrolled, sent when they leave or switch tab
@@ -366,7 +367,7 @@
     Array.prototype.forEach.call(railTrack.children, function (el) { appWatch.observe(el); });
   }
 
-  // About: how far through its pinned scroll we are drives the red flood
+  // About statement
   var aboutEl = document.querySelector('.about2');
 
   // Stack: skills are physical pills that fall into a pile and can be picked up and thrown
@@ -440,14 +441,12 @@
     docEl.style.setProperty('--progress', full > 0 ? Math.min(1, y / full).toFixed(4) : '0');
 
     if (!reduced) {
-      // About flood
+      // About: the statement's lines slide as it passes through the screen
       if (aboutEl) {
-        var ab = aboutEl.querySelector('.about2__scroll').getBoundingClientRect();
-        var span = ab.height - vh;
-        var at = span > 0 ? Math.max(0, Math.min(1, -ab.top / span)) : 0;
-        var af = Math.max(0, Math.min(1, (at - 0.22) / 0.5));
-        aboutEl.style.setProperty('--t', at.toFixed(4));
-        aboutEl.style.setProperty('--f', (af * af * (3 - 2 * af)).toFixed(4));
+        var ab = aboutEl.querySelector('.about2__statement').getBoundingClientRect();
+        if (ab.bottom > 0 && ab.top < vh) {
+          aboutEl.style.setProperty('--t', (((vh - ab.top) / (vh + ab.height)) * 2 - 1).toFixed(4));
+        }
       }
 
       // Pile: step the physics, and let a hard scroll jolt the pills

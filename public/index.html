@@ -136,42 +136,28 @@
       </div>
     </section>
 
-    <!-- About: a statement, then the page floods red and shows the numbers -->
+    <!-- About -->
     <section class="about2" id="about">
-      <div class="about2__scroll">
-      <div class="about2__pin">
-        <div class="about2__statement">
-          <p class="label">(About me)</p>
-          <h2 class="state" aria-label="I ship software businesses run on">
-            <span class="state__a" aria-hidden="true">I ship</span>
-            <em aria-hidden="true">software</em>
-            <span class="state__b" aria-hidden="true">businesses run on</span>
-          </h2>
-          <p class="label about2__hint">Keep scrolling ↓</p>
-        </div>
-
-        <div class="flood">
-          <svg class="flood__wave" viewBox="0 0 2880 120" preserveAspectRatio="none" aria-hidden="true">
-            <path class="flood__wave-back" d="M0 70 C120 20 240 20 360 70 S600 120 720 70 S960 20 1080 70 S1320 120 1440 70 S1680 20 1800 70 S2040 120 2160 70 S2400 20 2520 70 S2760 120 2880 70 V120 H0 Z"/>
-            <path d="M0 80 C90 40 270 120 360 80 S630 40 720 80 S990 120 1080 80 S1350 40 1440 80 S1710 120 1800 80 S2070 40 2160 80 S2430 120 2520 80 S2790 40 2880 80 V120 H0 Z"/>
-          </svg>
-          <div class="flood__clip">
-            <div class="flood__inner">
-              <div class="flood__copy">
-                <p class="label">(Hi, I'm Akhil)</p>
-                <p class="flood__text">I lead the build of RevalERP, a SaaS POS and ERP platform, and our E-commerce platform at Revalsys: planning sprints, unblocking the team and shipping to production. After hours I build websites, CMS platforms and HRMS tools for clients.</p>
-              </div>
-              <ul class="flood__stats">
-                <li><b data-count="25">25</b><span>ERP modules led. Each one a business running on it.</span></li>
-                <li><b data-count="40">40</b><span>Freelance builds shipped, start to finish.</span></li>
-                <li><b data-count="5">5</b><span>Certifications earned.</span></li>
-                <li><b data-count="3">3</b><span>Companies, since 2023.</span></li>
-              </ul>
-            </div>
-          </div>
-        </div>
+      <div class="about2__statement">
+        <p class="label">(About me)</p>
+        <h2 class="state" aria-label="I ship software businesses run on">
+          <span class="state__a" aria-hidden="true">I ship</span>
+          <em aria-hidden="true">software</em>
+          <span class="state__b" aria-hidden="true">businesses run on</span>
+        </h2>
       </div>
 
+      <div class="about2__info">
+        <div class="about2__bio reveal">
+          <p class="label">(Hi, I'm Akhil)</p>
+          <p class="about2__text">I lead the build of <em>RevalERP</em>, a SaaS POS and ERP platform, and our <em>E-commerce</em> platform at Revalsys: planning sprints, unblocking the team and shipping to production. After hours I build websites, CMS platforms and HRMS tools for clients.</p>
+        </div>
+        <ul class="about2__stats">
+          <li class="reveal"><b data-count="25">25</b><span>ERP modules led at Revalsys</span></li>
+          <li class="reveal"><b data-count="40">40</b><span>Freelance builds shipped</span></li>
+          <li class="reveal"><b data-count="5">5</b><span>Certifications earned</span></li>
+          <li class="reveal"><b data-count="3">3</b><span>Companies, since 2023</span></li>
+        </ul>
       </div>
 
       <div class="about2__after">
@@ -257,8 +243,9 @@
       <div class="rail">
         <div class="rail__pin">
           <div class="rail__stage">
-            <div class="desk" aria-hidden="true">
-              <div class="desk__screen">
+            <div class="desk">
+              <button type="button" class="desk__enter" data-os-enter data-cursor="Enter"><span>Click to enter the system</span></button>
+              <div class="desk__screen" aria-hidden="true">
                 <div class="desk__bar"><i></i><i></i><i></i><span id="desk-title">RevalERP</span><em>akhil@work</em></div>
                 <div class="desk__apps">
               <div class="desk__app is-on" data-app="0">
@@ -365,6 +352,8 @@
 
             <div class="rail__side">
               <div class="desk__dock" role="tablist" aria-label="Projects"><button type="button" data-go="0" class="is-on">RevalERP</button><button type="button" data-go="1">SHRMPro</button><button type="button" data-go="2">AR Sessions</button></div>
+              <button type="button" class="os-enter" data-os-enter>Enter the system <span aria-hidden="true">→</span></button>
+              <p class="os-enter__note">Opens a desktop where every project is an app you can open and move around.</p>
               <div class="rail__view">
                 <div class="rail__track">
               <div class="project__body">
@@ -787,5 +776,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.20.0/matter.min.js"></script>
   <script src="liquid.js"></script>
   <script src="script.js"></script>
+  <script src="os.js"></script>
 </body>
 </html>
