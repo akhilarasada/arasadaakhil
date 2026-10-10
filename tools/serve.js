@@ -1,6 +1,6 @@
 // Minimal static file server for looking at the built site locally:  node tools/serve.js public 5173
 const http = require('http'), fs = require('fs'), path = require('path');
-const root = process.argv[2], port = +process.argv[3] || 5180;
+const root = path.resolve(process.argv[2] || 'public'), port = +process.argv[3] || 5180;
 const types = { '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.js': 'text/javascript', '.json': 'application/json',
   '.svg': 'image/svg+xml', '.jpg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp', '.pdf': 'application/pdf',
   '.txt': 'text/plain', '.xml': 'text/xml', '.woff2': 'font/woff2', '.ico': 'image/x-icon' };
