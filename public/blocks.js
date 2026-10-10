@@ -122,26 +122,8 @@
       return ray.intersectObjects(meshes, false)[0] || null;
     }
 
-    // Coloured faces for the cube game: thin plates on the outside faces of each block
-    var NORM = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]];
-    var FACE_COLOURS = [0xd12424, 0xef7d1a, 0xf4f3f0, 0xf2c230, 0x1f8f5f, 0x2a5bd7];
-    var stickerMats = FACE_COLOURS.map(function (c) { return new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0, side: THREE.DoubleSide }); });
-    var plate = new THREE.PlaneGeometry(0.84, 0.84);
-    var home = blocks.map(function (blk, i) {
-      var at = [i % 3 - 1, Math.floor(i / 3) % 3 - 1, Math.floor(i / 9) - 1], faces = [];
-      NORM.forEach(function (n, k) {
-        var axis = k >> 1;
-        if (at[axis] !== n[axis]) return;
-        var s = new THREE.Mesh(plate, stickerMats[k]);
-        s.position.set(n[0] * 0.504, n[1] * 0.504, n[2] * 0.504);
-        if (axis === 0) s.rotation.y = n[0] * Math.PI / 2;
-        if (axis === 1) s.rotation.x = -n[1] * Math.PI / 2;
-        s.raycast = function () {};
-        blk.mesh.add(s);
-        faces.push(k);
-      });
-      return { at: at, faces: faces };
-    });
+    // Where each block sits in the 3 x 3 x 3 cube
+    var home = blocks.map(function (blk, i) { return [i % 3 - 1, Math.floor(i / 3) % 3 - 1, Math.floor(i / 9) - 1]; });
 
     /* ---------- the HUD ---------- */
     var hud = host.querySelector('.hud');
@@ -150,6 +132,13 @@
       tools: hud.querySelector('.hud__tools'), win: hud.querySelector('.hud__win'), code: hud.querySelector('.hud__code'),
       mail: hud.querySelector('[data-hud="mail"]'), reticle: hud.querySelector('.hud__reticle')
     };
+    var clockBar = null;
+    if (hud) { clockBar = document.createElement('i'); clockBar.className = 'hud__clock'; hud.appendChild(clockBar); }
+    // how much of the limit (time or turns) is left, 0..1
+    function limit(left) {
+      clockBar.style.transform = 'scaleX(' + Math.max(0, Math.min(1, left)).toFixed(4) + ')';
+      clockBar.classList.toggle('is-low', left < 0.3);
+    }
     var said = '';
     function say(text) { if (text !== said) { said = text; ui.status.textContent = text; } }
     function tool(label, fn) {
@@ -201,12 +190,20 @@
     window.__playBlocks = startGame;
     if (window.__playQueued) { startGame(window.__playQueued); window.__playQueued = null; }
 
-    /* ---------- RevalERP: the cube ---------- */
-    // The 27 modules are a real twisting cube. Drag a row to turn it; drag beside it to look around.
+    /* ---------- RevalERP: ship the release ---------- */
+    // The same cube, with one change: nine of its modules are red. They belong together on one
+    // side (the release), but the platform has been twisted out of line. Drag a row to turn it.
+    // Ten turns and sixty seconds to get all nine red modules back onto one face.
     function cubeGame() {
+      var TURNS = 10, TIME = 60;
       var AXV = [new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 1)];
-      var cub = home.map(function (hm) { return { pos: new THREE.Vector3(hm.at[0], hm.at[1], hm.at[2]), q: new THREE.Quaternion(), faces: hm.faces, turning: false }; });
-      var anim = null, history = [], moves = 0, won = false, grab = null;
+      var cub = home.map(function (at) {
+        var red = at[2] === 1;
+        return { pos: new THREE.Vector3(at[0], at[1], at[2]), q: new THREE.Quaternion(), turning: false,
+          red: red, colour: red ? RED : ((at[0] + at[1] + at[2] + 3) % 4 === 0 ? PAPER : INK) };
+      });
+      var reds = cub.filter(function (c) { return c.red; });
+      var anim = null, turnsLeft = TURNS, timeLeft = TIME, state = 'ready', grab = null;
       function commit(axis, layer, dir) {
         tq.setFromAxisAngle(AXV[axis], dir * Math.PI / 2);
         cub.forEach(function (c) {
@@ -219,36 +216,46 @@
         cub.forEach(function (c) { c.turning = Math.round(c.pos.getComponent(axis)) === layer; });
         anim = { axis: axis, layer: layer, dir: dir, t: 0, done: done };
       }
+      // solved when all nine red modules share an outside face
       function solved() {
-        var seen = {};
-        for (var i = 0; i < cub.length; i++) for (var k = 0; k < cub[i].faces.length; k++) {
-          var f = cub[i].faces[k];
-          tv.set(NORM[f][0], NORM[f][1], NORM[f][2]).applyQuaternion(cub[i].q);
-          var key = Math.round(tv.x) + ',' + Math.round(tv.y) + ',' + Math.round(tv.z);
-          if (seen[key] === undefined) seen[key] = f; else if (seen[key] !== f) return false;
+        for (var k = 0; k < 3; k++) {
+          var v = Math.round(reds[0].pos.getComponent(k));
+          if (v !== 0 && reds.every(function (c) { return Math.round(c.pos.getComponent(k)) === v; })) return true;
         }
-        return true;
+        return false;
       }
-      function report() { say(won ? 'Solved in ' + moves + ' turns' : 'Turns: ' + moves + ' · ' + history.length + ' from solved'); }
-      function after() { if (solved()) { won = true; history = []; report(); winGame(); } else report(); }
+      function strays() {
+        // how many red modules are off the fullest face, as a hint of how far there is to go
+        var best = 0;
+        for (var k = 0; k < 3; k++) [-1, 1].forEach(function (v) {
+          best = Math.max(best, reds.filter(function (c) { return Math.round(c.pos.getComponent(k)) === v; }).length);
+        });
+        return 9 - best;
+      }
+      function report() {
+        if (state === 'won') say('Released with ' + turnsLeft + ' turns and ' + Math.ceil(timeLeft) + 's to spare');
+        else if (state === 'lost') say((turnsLeft ? 'Out of time' : 'Out of turns') + ' · ' + strays() + ' red still stray. Shuffle and try again.');
+        else say(turnsLeft + ' turns · ' + Math.ceil(timeLeft) + 's · ' + strays() + ' red stray');
+      }
       function scramble() {
         if (anim) return;
-        while (history.length) { var u = history.pop(); commit(u[0], u[1], -u[2]); }
-        var prev = -1;
-        for (var n = 0; n < 4; n++) {
+        cub.forEach(function (c, i) { c.pos.set(home[i][0], home[i][1], home[i][2]); c.q.set(0, 0, 0, 1); });
+        var prev = -1, n = 0;
+        while (n < 4 || solved() || strays() < 3) {
           var axis;
           do { axis = Math.floor(Math.random() * 3); } while (axis === prev);
           prev = axis;
-          var mv = [axis, Math.random() < 0.5 ? -1 : 1, Math.random() < 0.5 ? -1 : 1];
-          commit(mv[0], mv[1], mv[2]); history.push(mv);
+          commit(axis, Math.random() < 0.5 ? -1 : 1, Math.random() < 0.5 ? -1 : 1);
+          if (++n > 40) break;
         }
-        moves = 0; won = false; ui.win.hidden = true; report();
+        turnsLeft = TURNS; timeLeft = TIME; state = 'ready'; ui.win.hidden = true;
+        limit(1); report();
       }
-      tool('Undo a turn', function () {
-        if (anim || won || !history.length) return;
-        var u = history.pop(); moves++;
-        turn(u[0], u[1], -u[2], after);
-      });
+      function after() {
+        if (solved()) { state = 'won'; report(); winGame(); }
+        else if (turnsLeft <= 0) { state = 'lost'; report(); }
+        else report();
+      }
       tool('Shuffle again', scramble);
       scramble();
 
@@ -258,9 +265,16 @@
         return { x: p1.x - p0.x, y: -(p1.y - p0.y) };
       }
       return {
-        title: 'Lock the modules', code: 'ERP10-CUBE', form: 0, pose: POSES[0], orbit: true, stickers: true,
-        rules: 'The platform has been knocked out of line. Drag a row to turn it, drag beside the cube to look around, and make every side one colour again.',
+        title: 'Ship the release', code: 'ERP10-CUBE', form: 0, pose: POSES[0], orbit: true,
+        rules: 'Nine red modules make up the release, and they belong on one side. Drag a row to turn it, drag beside the cube to look around. You have ' + TURNS + ' turns and ' + TIME + ' seconds to bring all nine onto one face.',
         update: function (dt) {
+          if (state === 'play') {
+            timeLeft -= dt;
+            if (timeLeft <= 0) { timeLeft = 0; state = 'lost'; }
+            // whichever runs out first is the one to watch
+            limit(Math.min(timeLeft / TIME, turnsLeft / TURNS));
+            report();
+          }
           if (!anim) return;
           anim.t += dt / 0.26;
           if (anim.t >= 1) {
@@ -277,10 +291,11 @@
             tq.setFromAxisAngle(AXV[anim.axis], anim.dir * (1 - Math.pow(1 - anim.t, 3)) * Math.PI / 2);
             out.pos.applyQuaternion(tq); out.quat.premultiply(tq);
           }
-          out.pos.multiplyScalar(1.06); out.scl.set(1, 1, 1); out.col.setHex(INK);
+          out.pos.multiplyScalar(1.06); out.scl.set(1, 1, 1); out.col.setHex(c.colour);
         },
         down: function (e) {
-          var hit = gmix > 0.97 && !anim && !won ? pick(e) : null;
+          var open = state === 'ready' || state === 'play';
+          var hit = gmix > 0.97 && !anim && open ? pick(e) : null;
           if (!hit) return false;                       // beside the cube: look around
           var n = hit.face.normal.clone().applyQuaternion(hit.object.quaternion);
           n.set(Math.round(n.x), Math.round(n.y), Math.round(n.z));
@@ -304,19 +319,19 @@
           var axis = Math.abs(av.x) > 0.5 ? 0 : Math.abs(av.y) > 0.5 ? 1 : 2;
           var layer = Math.round(grab.c.pos.getComponent(axis)), dir = av.getComponent(axis) > 0 ? 1 : -1;
           grab = null;
-          var lastMove = history[history.length - 1];
-          // turning a row straight back simply undoes it
-          if (lastMove && lastMove[0] === axis && lastMove[1] === layer && lastMove[2] === -dir) history.pop(); else history.push([axis, layer, dir]);
-          moves++;
+          state = 'play';                               // the clock starts with the first turn
+          turnsLeft--;
           turn(axis, layer, dir, after);
         },
         up: function () { grab = null; }
       };
     }
 
-    /* ---------- SHRMPro: seat the team leads ---------- */
-    // Twenty-five of the blocks become a 5 x 5 office floor, coloured by team. One lead per row,
-    // column and team, and no two leads touching. Click a block once to rule it out, twice to seat.
+    /* ---------- SHRMPro: plan the on-call month ---------- */
+    // The same calendar wall: four weeks of seven days, shaded into four teams. It is the
+    // "queens" puzzle on a calendar: put one lead on call in every week and from every team,
+    // never two on the same weekday, never on days that touch (not even corner to corner).
+    // Click a day once to rule it out, twice to put a lead on call. Forty seconds.
     function glyph(ch, colour) {
       var c = document.createElement('canvas'); c.width = c.height = 128;
       var x = c.getContext('2d');
@@ -326,93 +341,100 @@
       return new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), transparent: true, depthTest: false });
     }
     function queensGame() {
-      var N = 5, TINTS = [0xcf6457, 0xd9a92e, 0x6aa653, 0x3f9fb3, 0x7479cf];
-      var mats = { lead: glyph('♛', '#0a0a0a'), bad: glyph('♛', '#ffffff'), out: glyph('×', 'rgba(10,10,10,0.5)') };
-      var marks = [], region, state, bad = {}, won = false, began = 0, press = null;
-      for (var m = 0; m < N * N; m++) { var sp = new THREE.Sprite(mats.lead); sp.visible = false; sp.renderOrder = 5; group.add(sp); marks.push(sp); }
+      var ROWS = 4, COLS = 7, TIME = 40;
+      // the wall's own shades, one per team
+      var TEAM = [INK, 0x5c5a55, STONE, PAPER];
+      var mats = { lead: glyph('♛', '#ffffff'), out: glyph('×', '#d12424') };
+      var marks = [], region, state, bad = {}, phase = 'ready', timeLeft = TIME, press = null;
+      for (var m = 0; m < COUNT; m++) { var sp = new THREE.Sprite(mats.lead); sp.visible = false; sp.renderOrder = 5; group.add(sp); marks.push(sp); }
 
       function board() {
-        // a hidden answer first: one seat per row and column, none touching
+        // a hidden answer first: one day per week, all on different weekdays, none touching
         var cols, ok = false;
         while (!ok) {
-          cols = [0, 1, 2, 3, 4];
-          for (var k = N - 1; k > 0; k--) { var r = Math.floor(Math.random() * (k + 1)), t = cols[k]; cols[k] = cols[r]; cols[r] = t; }
-          ok = true;
-          for (var q2 = 1; q2 < N; q2++) if (Math.abs(cols[q2] - cols[q2 - 1]) < 2) { ok = false; break; }
+          var all = [0, 1, 2, 3, 4, 5, 6];
+          for (var k = all.length - 1; k > 0; k--) { var r = Math.floor(Math.random() * (k + 1)), t = all[k]; all[k] = all[r]; all[r] = t; }
+          cols = all.slice(0, ROWS);
+          ok = cols[ROWS - 1] !== COLS - 1;             // the wall has no 28th day
+          for (var w = 1; w < ROWS && ok; w++) if (Math.abs(cols[w] - cols[w - 1]) < 2) ok = false;
         }
-        // then grow one team outwards from each of those seats until the floor is full
+        // then grow one team outwards from each of those days until the month is full
         region = [];
-        for (var a2 = 0; a2 < N * N; a2++) region.push(-1);
+        for (var d = 0; d < COUNT; d++) region.push(-1);
         var edge = [];
-        cols.forEach(function (c, row) { region[row * N + c] = row; edge.push(row * N + c); });
-        var left = N * N - N;
+        cols.forEach(function (c, row) { region[row * COLS + c] = row; edge.push(row * COLS + c); });
+        var left = COUNT - ROWS;
         while (left > 0) {
-          var from = edge[Math.floor(Math.random() * edge.length)], pr = Math.floor(from / N), pc = from % N;
-          var near = [[pr - 1, pc], [pr + 1, pc], [pr, pc - 1], [pr, pc + 1]].filter(function (p) {
-            return p[0] >= 0 && p[0] < N && p[1] >= 0 && p[1] < N && region[p[0] * N + p[1]] === -1;
+          var from = edge[Math.floor(Math.random() * edge.length)], pr = Math.floor(from / COLS), pc = from % COLS;
+          var near = [[pr - 1, pc], [pr + 1, pc], [pr, pc - 1], [pr, pc + 1]].filter(function (q2) {
+            return q2[0] >= 0 && q2[0] < ROWS && q2[1] >= 0 && q2[1] < COLS && q2[0] * COLS + q2[1] < COUNT && region[q2[0] * COLS + q2[1]] === -1;
           });
           if (!near.length) { edge.splice(edge.indexOf(from), 1); continue; }
-          var nx = near[Math.floor(Math.random() * near.length)], ni = nx[0] * N + nx[1];
+          var nx = near[Math.floor(Math.random() * near.length)], ni = nx[0] * COLS + nx[1];
           region[ni] = region[from]; edge.push(ni); left--;
         }
         state = region.map(function () { return 0; });
-        won = false; began = Date.now(); ui.win.hidden = true;
-        check();
+        phase = 'ready'; timeLeft = TIME; ui.win.hidden = true;
+        limit(1); check();
       }
       function check() {
         var leads = [];
         bad = {};
         state.forEach(function (s, i) { if (s === 2) leads.push(i); });
         for (var x = 0; x < leads.length; x++) for (var y = x + 1; y < leads.length; y++) {
-          var i1 = leads[x], i2 = leads[y], r1 = Math.floor(i1 / N), c1 = i1 % N, r2 = Math.floor(i2 / N), c2 = i2 % N;
+          var i1 = leads[x], i2 = leads[y], r1 = Math.floor(i1 / COLS), c1 = i1 % COLS, r2 = Math.floor(i2 / COLS), c2 = i2 % COLS;
           if (r1 === r2 || c1 === c2 || region[i1] === region[i2] || (Math.abs(r1 - r2) <= 1 && Math.abs(c1 - c2) <= 1)) bad[i1] = bad[i2] = true;
         }
         var clashes = Object.keys(bad).length;
-        if (leads.length === N && !clashes) {
-          won = true;
-          say('All ' + N + ' teams have their lead · ' + Math.round((Date.now() - began) / 1000) + 's');
-          winGame();
-        } else {
-          say(leads.length + ' of ' + N + ' leads seated' + (clashes ? ' · ' + clashes + ' in conflict' : ''));
-        }
+        if (leads.length === ROWS && !clashes && phase !== 'lost') { phase = 'won'; winGame(); }
+        if (phase === 'won') say('Month covered with ' + Math.ceil(timeLeft) + 's to spare');
+        else if (phase === 'lost') say('Out of time with ' + (leads.length - clashes) + ' of ' + ROWS + ' weeks covered. Try a new month.');
+        else say(leads.length + ' of ' + ROWS + ' on call · ' + Math.ceil(timeLeft) + 's' + (clashes ? ' · ' + clashes + ' in conflict' : ''));
       }
-      tool('Clear the floor', function () { if (!won) { state = state.map(function () { return 0; }); check(); } });
-      tool('New floor plan', board);
+      tool('Clear', function () { if (phase === 'ready' || phase === 'play') { state = state.map(function () { return 0; }); check(); } });
+      tool('New month', board);
       board();
 
+      var cal = FORMS[1];
       return {
-        title: 'Seat the team leads', code: 'HR10-LEADS', form: 1, pose: [-0.22, 0.14], orbit: false,
-        rules: 'Each colour is a team. Seat one lead in every row, every column and every team, and never two leads side by side or corner to corner. Click once to rule a seat out, twice to seat a lead.',
-        update: function () {},
+        title: 'Plan the on-call month', code: 'HR10-LEADS', form: 1, pose: POSES[1], orbit: false,
+        rules: 'Each shade is a team. Put one lead on call in every week and from every team, never two on the same weekday, never on days that touch, not even corner to corner. Click once to rule a day out, twice to put a lead on call. ' + TIME + ' seconds.',
+        update: function (dt) {
+          if (phase !== 'play') return;
+          timeLeft -= dt;
+          if (timeLeft <= 0) { timeLeft = 0; phase = 'lost'; }
+          limit(timeLeft / TIME);
+          check();
+        },
         apply: function (i, out) {
+          var e = cal[i], s = state[i];
           out.quat.set(0, 0, 0, 1);
-          if (i >= N * N) { out.pos.set(0, 0, -2); out.scl.set(0.001, 0.001, 0.001); out.col.setHex(INK); return; }
-          var r = Math.floor(i / N), c = i % N, s = state[i];
-          var z = s === 2 ? 0.55 : s === 1 ? -0.3 : 0;
-          out.pos.set((c - 2) * 1.14 + (bad[i] ? Math.sin(clock * 34 + i) * 0.035 : 0), (2 - r) * 1.14 - 0.6, z);
-          out.scl.set(1, 1, 0.42);
-          out.col.setHex(bad[i] ? RED : TINTS[region[i]]);
-          if (s === 1) out.col.lerp(a.setHex(0xe6e4df), 0.62);
+          out.pos.set(e.p[0] + (bad[i] ? Math.sin(clock * 34 + i) * 0.04 : 0), e.p[1] - 0.55, s === 2 ? 0.5 : s === 1 ? -0.22 : 0);
+          out.scl.set(e.s[0], e.s[1], e.s[2]);
+          // a lead on call is a red day, the way leave days are red on the wall
+          out.col.setHex(s === 2 ? RED : TEAM[region[i]]);
         },
         after: function (g) {
           marks.forEach(function (sp, i) {
             var s = state[i];
-            sp.visible = s > 0 && g > 0.6;
+            sp.visible = s > 0 && g > 0.6 && !(s === 2 && bad[i] && Math.sin(clock * 16) > 0);
             if (!sp.visible) return;
-            sp.material = s === 1 ? mats.out : bad[i] ? mats.bad : mats.lead;
-            sp.position.copy(blocks[i].mesh.position); sp.position.z += 0.32;
-            var size = s === 1 ? 0.55 : 0.82;
+            sp.material = s === 1 ? mats.out : mats.lead;
+            sp.position.copy(blocks[i].mesh.position); sp.position.z += 0.2;
+            var size = s === 1 ? 0.5 : 0.7;
             sp.scale.set(size, size, 1);
           });
         },
         down: function (e) { press = { x: e.clientX, y: e.clientY }; return true; },
         up: function (e) {
-          if (!press || !e || won || gmix < 0.9) { press = null; return; }
+          var open = phase === 'ready' || phase === 'play';
+          if (!press || !e || !open || gmix < 0.9) { press = null; return; }
           var still = Math.abs(e.clientX - press.x) + Math.abs(e.clientY - press.y) < 10;
           press = null;
           var hit = still ? pick(e) : null;
-          if (!hit || hit.object.userData.i >= N * N) return;
+          if (!hit) return;
           var i = hit.object.userData.i;
+          phase = 'play';                               // the clock starts with the first click
           state[i] = (state[i] + 1) % 3;
           check();
         },
@@ -442,7 +464,7 @@
         holo.forEach(function (h) { h.lock = 0; h.pinned = false; });
         order = []; state = 'ready'; timeLeft = TIME; glitchT = 0; stun = 0; dir = dirNow = 1; flipIn = 4.5;
         ui.win.hidden = true;
-        report();
+        limit(1); report();
       }
       function report() {
         if (state === 'ready') say('Move onto the stage to start · anchor ' + NEED + ' in ' + TIME + 's');
@@ -466,6 +488,7 @@
           var pace = playing ? Math.min(3.8, 1.9 + order.length * 0.16) : 1;
           if (playing) {
             timeLeft -= dt; flipIn -= dt; stun = Math.max(0, stun - dt);
+            limit(timeLeft / TIME);
             if (flipIn <= 0) { dir = -dir; flipIn = 2.6 + Math.random() * 2.6; }
             if (timeLeft <= 0) { timeLeft = 0; state = 'lost'; }
           }
@@ -616,7 +639,6 @@
           blk.mesh.material.color.lerp(G.col, gmix);
         }
       }
-      stickerMats.forEach(function (m) { m.opacity = live && live.stickers ? gmix : 0; m.visible = m.opacity > 0.01; });
       if (live && live.after) live.after(gmix);
 
       // the whole model: each project's pose, a slow drift, the pointer, and whatever the visitor dragged

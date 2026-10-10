@@ -2219,6 +2219,11 @@ html.is-arcade { overflow: hidden; }
 .hud__claim .link-btn { margin-top: 0; border-color: var(--bg); color: var(--bg); }
 .hud__claim .link-btn:hover { background: var(--bg); color: var(--ink); }
 @keyframes arcade-win { from { opacity: 0; transform: translateY(14px); } }
+/* what is left of the limit, draining along the top edge */
+.hud__clock { position: absolute; left: 0; right: 0; top: 0; height: 4px; background: var(--ink); transform-origin: 0 50%; transition: background 0.3s; }
+.hud__clock.is-low { background: var(--red); animation: stun 0.5s steps(2) infinite; }
+.hud__status { transition: background 0.3s; }
+.hud:has(.hud__clock.is-low) .hud__status { background: var(--red); }
 /* the reticle: its ring closes as an anchor takes hold */
 .hud__reticle {
   position: absolute; left: 0; top: 0;
