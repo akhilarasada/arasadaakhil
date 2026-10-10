@@ -2371,3 +2371,6 @@ html[data-invert] .blocks3d.is-playing .blocks3d__canvas { filter: none; }
 .hero__title-wave, .hero__title .hl:hover { color: rgb(225, 53, 56); }
 /* small labels on the stone-coloured section need a darker grey to stay readable */
 .offer .label { color: #3d3b37; }
+/* while the coupon is being issued, the claim buttons wait */
+.hud__win.is-waiting .hud__claim { opacity: 0.35; pointer-events: none; }
+.hud__win.is-waiting .hud__code { animation: stun 0.6s steps(2) infinite; }

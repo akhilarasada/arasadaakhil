@@ -76,6 +76,19 @@ const STYLE = `
   .rows .num { font-variant-numeric:tabular-nums; font-weight:500; }
   .rows .num small { color:var(--muted); font-weight:400; margin-left:6px; }
   .empty { padding:18px 0; color:var(--muted); }
+  .coupon-search { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:14px; }
+  .coupon-search input { flex:1 1 280px; padding:11px 14px; border:1px solid var(--line); border-radius:999px; background:transparent; color:inherit; font:inherit; font-size:15px; text-transform:uppercase; outline:none; }
+  .coupon-search input::placeholder { text-transform:none; }
+  .coupon-search input:focus { border-color:var(--red); }
+  .coupon-search a { font-size:13px; }
+  .coupon-search button, .coupons button { padding:9px 16px; border:1px solid var(--ink); border-radius:999px; background:var(--ink); color:var(--bg); font:inherit; font-size:13px; cursor:pointer; white-space:nowrap; }
+  .coupon-search button:hover, .coupons button:hover { background:var(--red); border-color:var(--red); color:#fff; }
+  .coupons button.quiet { background:transparent; color:inherit; border-color:var(--line); }
+  .coupons .code { font:600 16px var(--display); letter-spacing:.02em; }
+  .coupons .pill { display:inline-block; padding:3px 10px; border:1px solid var(--line); border-radius:999px; font-size:12px; }
+  .coupons .pill--used { background:var(--red); border-color:var(--red); color:#fff; }
+  .coupons tr.is-used .code { text-decoration:line-through; opacity:.55; }
+  .coupons form { margin:0; }
   table { width:100%; border-collapse:collapse; font-size:14px; }
   th { text-align:left; padding:8px 10px 8px 0; font-weight:500; font-size:11px; letter-spacing:.09em; text-transform:uppercase; color:var(--muted); }
   td { padding:9px 10px 9px 0; border-top:1px solid var(--line); white-space:nowrap; }
@@ -303,6 +316,39 @@ function people(s) {
   </nav>`;
 }
 
+/* ---------- coupons ---------- */
+
+const GAME_NAMES = { cube: 'RevalERP · Ship the release', queens: 'SHRMPro · On-call month', anchor: 'AR Sessions · Anchor' };
+
+function coupons(c) {
+  const search = `<form class="coupon-search" method="get" action="/dashboard#coupons">
+      <input type="search" name="coupon" value="${esc(c.q)}" placeholder="Type the code a client sent you, e.g. ERP10-7K4QX2" autocomplete="off" spellcheck="false" aria-label="Coupon code">
+      <button type="submit">Search</button>
+      ${c.q ? '<a href="/dashboard#coupons">Show latest</a>' : ''}
+    </form>`;
+  if (!c.list.length) {
+    return search + `<p class="empty">${c.q
+      ? 'No coupon matches "' + esc(c.q) + '". It was not issued by this site.'
+      : 'No coupons yet. One appears here each time a visitor wins a game.'}</p>`;
+  }
+  const body = c.list.map(x => {
+    const place = [x.city, countryName(x.country)].filter(Boolean).join(', ');
+    return `<tr class="${x.redeemed ? 'is-used' : ''}">
+      <td><b class="code">${esc(x.code)}</b></td>
+      <td>${esc(GAME_NAMES[x.game] || x.game)}</td>
+      <td>${esc(x.won)}</td>
+      <td>${esc(place || 'Unknown')}<br><span class="label">${esc(x.ip || '')}${x.device ? ' · ' + esc(x.device) : ''}</span></td>
+      <td>${x.redeemed ? '<span class="pill pill--used">Redeemed</span><br><span class="label">' + esc(x.redeemed) + '</span>' : '<span class="pill">Not used</span>'}</td>
+      <td><form method="post" action="/dashboard/coupon">
+        <input type="hidden" name="code" value="${esc(x.code)}"><input type="hidden" name="q" value="${esc(c.q)}">
+        <input type="hidden" name="action" value="${x.redeemed ? 'undo' : 'redeem'}">
+        <button type="submit" class="${x.redeemed ? 'quiet' : ''}">${x.redeemed ? 'Undo' : 'Mark redeemed'}</button>
+      </form></td>
+    </tr>`;
+  }).join('');
+  return search + `<div class="scroll"><table class="coupons"><thead><tr><th>Code</th><th>Game</th><th>Won (IST)</th><th>Winner</th><th>Status</th><th></th></tr></thead><tbody>${body}</tbody></table></div>`;
+}
+
 /* ---------- page ---------- */
 
 export function renderDashboard(s) {
@@ -385,6 +431,13 @@ export function renderDashboard(s) {
     <div class="card"><h3>Which AI</h3><p>Connections and requests by AI app.</p>${rows(s.mcp.clients, 'No AI app has connected in this period.')}</div>
     <div class="card"><h3>What they asked for</h3><p>Requests by tool.</p>${rows(s.mcp.tools, 'No requests in this period.')}</div>
     <div class="card"><h3>Latest AI activity</h3><p>The 10 most recent MCP requests.</p>${mcpRecent}</div>
+  </section>
+
+  <div class="section-title" id="coupons"><i></i><h2>Coupons</h2></div>
+  <section class="card">
+    <h3>Game coupons</h3>
+    <p>${fmt(s.coupons.issued)} issued, ${fmt(s.coupons.redeemed)} redeemed. Every win creates one random code for 10% off. When a client sends you a code, search it here: if it is listed and not used, apply the discount and mark it redeemed.</p>
+    ${coupons(s.coupons)}
   </section>
 
   <div class="section-title" id="visitors"><i></i><h2>Visitors</h2></div>

@@ -27,6 +27,8 @@ export default {
       ctx.waitUntil(track(request, env, raw).catch(err => console.error('track failed', err)));
       return new Response(null, { status: 204 });
     }
+    if (url.pathname === '/api/coupon' && request.method === 'POST') return issueCoupon(request, env);
+    if (url.pathname === '/dashboard/coupon' && request.method === 'POST') return markCoupon(request, env);
     if (url.pathname === '/mcp' || url.pathname === '/mcp/') return handleMcp(request, env, ctx);
     if (url.pathname === '/api/mcp-stats') return mcpPublicStats(env);
 
@@ -91,6 +93,80 @@ async function track(request, env, raw) {
   ).run();
 }
 
+/* ---------- coupons ---------- */
+
+// Each game on the site has its own prefix, so a code says which game it was won in
+const COUPON_GAMES = { cube: 'ERP10', queens: 'HR10', anchor: 'AR10' };
+const COUPON_LETTERS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';   // no 0/O, 1/I/L: easy to read back
+const COUPONS_PER_DAY = 6;                                  // per visitor
+
+function randomCode(prefix) {
+  const bytes = crypto.getRandomValues(new Uint8Array(6));
+  return prefix + '-' + [...bytes].map(b => COUPON_LETTERS[b % COUPON_LETTERS.length]).join('');
+}
+
+// Called by the page when a game is won. Makes a fresh random code, stores it and returns it.
+// A visitor who wins the same game again within a day gets the code they already hold.
+async function issueCoupon(request, env) {
+  const reply = (status, body) => new Response(JSON.stringify(body), {
+    status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' }
+  });
+  if (!env.DB) return reply(503, { error: 'unavailable' });
+  const origin = request.headers.get('origin');
+  if (origin && new URL(origin).host !== new URL(request.url).host) return reply(403, { error: 'forbidden' });
+  const ua = request.headers.get('user-agent') || '';
+  if (!ua || BOT.test(ua)) return reply(403, { error: 'forbidden' });
+
+  let body;
+  try { body = await request.json(); } catch (e) { body = null; }
+  const game = body && typeof body.game === 'string' ? body.game : '';
+  if (!COUPON_GAMES[game]) return reply(400, { error: 'unknown game' });
+
+  await ensureSchema(env.DB);
+  const now = Date.now();
+  const ip = request.headers.get('cf-connecting-ip') || 'unknown';
+  const cf = request.cf || {};
+
+  const held = await env.DB.prepare(
+    'SELECT code FROM coupons WHERE ip = ? AND game = ? AND redeemed_ts IS NULL AND ts > ? ORDER BY id DESC LIMIT 1'
+  ).bind(ip, game, now - 86400000).first();
+  if (held) return reply(200, { code: held.code });
+
+  const today = await env.DB.prepare('SELECT COUNT(*) AS n FROM coupons WHERE ip = ? AND ts > ?').bind(ip, now - 86400000).first();
+  if (today && today.n >= COUPONS_PER_DAY) return reply(429, { error: 'limit' });
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const code = randomCode(COUPON_GAMES[game]);
+    try {
+      await env.DB.prepare(
+        'INSERT INTO coupons (code, game, ts, day, ip, city, country, device) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+      ).bind(code, game, now, dayOf(now), ip, clean(cf.city, 60), cf.country || null, deviceOf(ua, 0)).run();
+      return reply(200, { code });
+    } catch (err) { /* the one-in-a-billion duplicate: draw again */ }
+  }
+  return reply(500, { error: 'failed' });
+}
+
+// The dashboard's "Mark redeemed" and "Undo" buttons
+async function markCoupon(request, env) {
+  const origin = request.headers.get('origin');
+  const sameSite = !origin || new URL(origin).host === new URL(request.url).host;
+  if (!env.DB || !env.DASHBOARD_PASSWORD || !sameSite || !(await validSession(request, env.DASHBOARD_PASSWORD))) {
+    return new Response(null, { status: 303, headers: { location: '/dashboard' } });
+  }
+  let form;
+  try { form = await request.formData(); } catch (e) { form = new FormData(); }
+  const code = String(form.get('code') || '').trim().toUpperCase().slice(0, 24);
+  const undo = form.get('action') === 'undo';
+  await ensureSchema(env.DB);
+  await env.DB.prepare('UPDATE coupons SET redeemed_ts = ? WHERE code = ?').bind(undo ? null : Date.now(), code).run();
+  const back = String(form.get('q') || '').slice(0, 24);
+  return new Response(null, {
+    status: 303,
+    headers: { location: '/dashboard?coupon=' + encodeURIComponent(back) + '#coupons', 'cache-control': 'no-store' }
+  });
+}
+
 /* ---------- dashboard ---------- */
 
 async function dashboard(request, env, url) {
@@ -119,6 +195,7 @@ async function dashboard(request, env, url) {
   const days = RANGES.includes(Number(url.searchParams.get('days'))) ? Number(url.searchParams.get('days')) : 30;
   const page = Math.max(1, Math.floor(Number(url.searchParams.get('page')) || 1));
   const stats = await loadStats(env.DB, days, page);
+  stats.coupons = await loadCoupons(env.DB, url.searchParams.get('coupon'));
   return new Response(renderDashboard(stats), { headers });
 }
 
@@ -196,6 +273,23 @@ async function digest(text) {
 }
 
 /* ---------- numbers for the dashboard ---------- */
+
+// The coupons card: totals, and either the codes matching a search or the 25 newest
+async function loadCoupons(db, search) {
+  const q = String(search || '').trim().toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, 24);
+  const columns = 'code, game, ts, city, country, device, ip, redeemed_ts';
+  const [totals, list] = await db.batch([
+    db.prepare('SELECT COUNT(*) AS issued, SUM(CASE WHEN redeemed_ts IS NOT NULL THEN 1 ELSE 0 END) AS redeemed FROM coupons'),
+    q ? db.prepare(`SELECT ${columns} FROM coupons WHERE code LIKE ? ORDER BY id DESC LIMIT 25`).bind('%' + q + '%')
+      : db.prepare(`SELECT ${columns} FROM coupons ORDER BY id DESC LIMIT 25`)
+  ]);
+  return {
+    q,
+    issued: totals.results[0].issued || 0,
+    redeemed: totals.results[0].redeemed || 0,
+    list: list.results.map(c => ({ ...c, won: istString(c.ts), redeemed: c.redeemed_ts ? istString(c.redeemed_ts) : '' }))
+  };
+}
 
 // One person across days: their IP when we have it, else the older daily id
 const WHO = 'COALESCE(ip, visitor)';

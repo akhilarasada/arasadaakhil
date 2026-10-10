@@ -147,13 +147,33 @@
       btn.addEventListener('click', fn);
       ui.tools.appendChild(btn);
     }
+    // A win asks the server for a coupon. The server makes a random code, keeps a record of it
+    // and sends it back, so every code a client quotes can be looked up in the dashboard.
+    var issued = '', DEAL = ui && hud.querySelector('.hud__deal').textContent;
     function winGame() {
       if (!game) return;
-      ui.code.textContent = game.code;
-      ui.mail.href = 'mailto:contact@arasadaakhil.website?subject=' + encodeURIComponent('Coupon ' + game.code) +
-        '&body=' + encodeURIComponent('Hi Akhil,\n\nI won "' + game.title + '" on your site. My coupon code is ' + game.code + '.\n\nMy project:\n');
+      var won = game;
+      issued = '';
       ui.win.hidden = false;
-      if (window.portfolioTrack) window.portfolioTrack('event', 'Game won: ' + game.title);
+      ui.win.classList.add('is-waiting');
+      ui.code.textContent = '· · · · · ·';
+      hud.querySelector('.hud__deal').textContent = DEAL;
+      if (window.portfolioTrack) window.portfolioTrack('event', 'Game won: ' + won.title);
+      fetch('/api/coupon', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ game: won.key }) })
+        .then(function (res) { return res.ok ? res.json() : Promise.reject(res.status); })
+        .then(function (data) {
+          issued = data.code;
+          ui.code.textContent = issued;
+          ui.mail.href = 'mailto:contact@arasadaakhil.website?subject=' + encodeURIComponent('Coupon ' + issued) +
+            '&body=' + encodeURIComponent('Hi Akhil,\n\nI won "' + won.title + '" on your site. My coupon code is ' + issued + '.\n\nMy project:\n');
+          ui.win.classList.remove('is-waiting');
+        })
+        .catch(function (why) {
+          ui.code.textContent = why === 429 ? 'Enough for today' : 'No code this time';
+          hud.querySelector('.hud__deal').textContent = why === 429
+            ? 'You have collected today\'s coupons already. Use one of those, or come back tomorrow.'
+            : 'The code could not be issued just now. Send me a screenshot of this win and I will honour it.';
+        });
     }
     var MAKERS = { cube: cubeGame, queens: queensGame, anchor: anchorGame };
     function startGame(name) {
@@ -163,6 +183,7 @@
       ui.tools.innerHTML = ''; ui.win.hidden = true; said = '';
       yaw = pitch = yawVel = pitchVel = 0;
       game = MAKERS[name]();
+      game.key = name;
       ui.title.textContent = game.title;
       ui.rules.textContent = game.rules;
       hud.hidden = false;
@@ -181,7 +202,7 @@
     if (hud) {
       hud.querySelector('[data-hud="exit"]').addEventListener('click', endGame);
       hud.querySelector('[data-hud="form"]').addEventListener('click', function () {
-        var text = 'Coupon ' + game.code + ' (I won "' + game.title + '").\n\nMy project: ';
+        var text = 'Coupon ' + issued + ' (I won "' + game.title + '").\n\nMy project: ';
         endGame();
         if (window.portfolioBrief) window.portfolioBrief(text);
       });
@@ -265,7 +286,7 @@
         return { x: p1.x - p0.x, y: -(p1.y - p0.y) };
       }
       return {
-        title: 'Ship the release', code: 'ERP10-CUBE', form: 0, pose: POSES[0], orbit: true,
+        title: 'Ship the release', form: 0, pose: POSES[0], orbit: true,
         rules: 'Nine red modules make up the release, and they belong on one side. Drag a row to turn it, drag beside the cube to look around. You have ' + TURNS + ' turns and ' + TIME + ' seconds to bring all nine onto one face.',
         update: function (dt) {
           if (state === 'play') {
@@ -397,7 +418,7 @@
 
       var cal = FORMS[1];
       return {
-        title: 'Plan the on-call month', code: 'HR10-LEADS', form: 1, pose: POSES[1], orbit: false,
+        title: 'Plan the on-call month', form: 1, pose: POSES[1], orbit: false,
         rules: 'Each shade is a team. Put one lead on call in every week and from every team, never two on the same weekday, never on days that touch, not even corner to corner. Click once to rule a day out, twice to put a lead on call. ' + TIME + ' seconds.',
         update: function (dt) {
           if (phase !== 'play') return;
@@ -480,7 +501,7 @@
       reset();
 
       return {
-        title: 'Anchor the session', code: 'AR10-ANCHOR', form: 2, pose: [0.16, 0], orbit: false,
+        title: 'Anchor the session', form: 2, pose: [0.16, 0], orbit: false,
         rules: 'Hold your reticle on a drifting hologram until its ring closes. The rings speed up with every anchor and reverse without warning. Red blocks are glitches: touch one and your latest anchor breaks loose.',
         update: function (dt) {
           var playing = state === 'play';

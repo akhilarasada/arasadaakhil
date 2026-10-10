@@ -58,7 +58,21 @@ export async function ensureSchema(db) {
       country TEXT,
       ip TEXT
     )`),
-    db.prepare('CREATE INDEX IF NOT EXISTS idx_mcp_day ON mcp_calls (day, method)')
+    db.prepare('CREATE INDEX IF NOT EXISTS idx_mcp_day ON mcp_calls (day, method)'),
+    // One row per coupon won in a game on the site
+    db.prepare(`CREATE TABLE IF NOT EXISTS coupons (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      code TEXT NOT NULL UNIQUE,
+      game TEXT NOT NULL,
+      ts INTEGER NOT NULL,
+      day TEXT NOT NULL,
+      ip TEXT,
+      city TEXT,
+      country TEXT,
+      device TEXT,
+      redeemed_ts INTEGER
+    )`),
+    db.prepare('CREATE INDEX IF NOT EXISTS idx_coupons_ip ON coupons (ip, game, ts)')
   ]);
 
   const existing = await db.prepare('PRAGMA table_info(events)').all();
