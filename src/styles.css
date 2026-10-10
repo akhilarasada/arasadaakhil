@@ -2358,3 +2358,19 @@ html[data-invert] .blocks3d.is-playing .blocks3d__canvas { filter: none; }
 /* size attributes on these images are only there to reserve their shape while loading */
 .exp__logo img { width: auto; height: auto; }
 .lightbox img { width: auto; height: auto; }
+
+/* ---------- Nav and hero text: readable to contrast checkers ----------
+   Both sit in "difference" blend mode so they flip to white over the photo and dark sections.
+   That used to need white text, which tools read as white-on-white. Instead the text is now
+   declared dark and the whole layer is inverted before it is blended: the picture on screen is
+   identical, and the declared colours are the ones people actually see on the pale page. */
+.nav, .hero__content { filter: invert(1); }
+.nav, .hero__content { color: #000; }
+.nav__logo i, .nav .dot { background: #000; }
+.hero__content .hero__foot { border-top-color: rgba(0, 0, 0, 0.25); color: rgba(0, 0, 0, 0.62); }
+.hero__title-wave, .hero__title .hl:hover { color: rgb(225, 53, 56); }
+/* small labels on the stone-coloured section need a darker grey to stay readable */
+.offer .label { color: #3d3b37; }
+/* Sections far below the screen are not laid out or painted until the visitor gets near them.
+   (Not Selected Work, Skillset or Contact: those hold pinned or screen-fixed pieces.) */
+.about3, .stack, .freelance, .exp, .resume, .mcp, .offer { content-visibility: auto; contain-intrinsic-size: auto 900px; }
