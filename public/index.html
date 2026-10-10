@@ -136,55 +136,32 @@
       </div>
     </section>
 
-    <!-- About -->
-    <section class="about2" id="about">
-      <div class="about2__statement">
-        <p class="label">(About me)</p>
-        <h2 class="state" aria-label="I ship software businesses run on">
-          <span class="state__a" aria-hidden="true">I ship</span>
-          <em aria-hidden="true">software</em>
-          <span class="state__b" aria-hidden="true">businesses run on</span>
-        </h2>
+    <!-- About: a 3D staff badge on a lanyard (badge.js) beside the short bio -->
+    <section class="about3" id="about">
+      <div class="badge3d" aria-hidden="true">
+        <!-- Shown until the 3D badge is ready, and kept if 3D is unavailable -->
+        <div class="badge3d__flat">
+          <span class="badge3d__strap"></span>
+          <div class="badge3d__card">
+            <div class="badge3d__head"><b>AA<i></i></b><span>ID · AA-001</span></div>
+            <img src="assets/akhil.webp" alt="" loading="lazy">
+            <strong>Arasada<br>Akhil</strong>
+            <span>Lead .NET Developer · Revalsys</span>
+          </div>
+        </div>
+        <p class="badge3d__hint label">Drag it · click to flip</p>
       </div>
 
-      <div class="about2__info">
-        <div class="about2__bio reveal">
-          <p class="label">(Hi, I'm Akhil)</p>
-          <p class="about2__text">I lead the build of <em>RevalERP</em>, a SaaS POS and ERP platform, and our <em>E-commerce</em> platform at Revalsys: planning sprints, unblocking the team and shipping to production. After hours I build websites, CMS platforms and HRMS tools for clients.</p>
-        </div>
-        <ul class="about2__stats">
+      <div class="about3__body">
+        <p class="label reveal">(About me)</p>
+        <h2 class="about3__title reveal">Team lead by day.<br>Freelance builder <em>by night.</em></h2>
+        <p class="about3__text reveal">I lead the build of <em>RevalERP</em>, a SaaS POS and ERP platform, and our <em>E-commerce</em> platform at Revalsys: planning sprints, unblocking the team and shipping to production. After hours I build websites, CMS platforms and HRMS tools for clients.</p>
+        <ul class="about3__stats">
           <li class="reveal"><b data-count="25">25</b><span>ERP modules led at Revalsys</span></li>
           <li class="reveal"><b data-count="40">40</b><span>Freelance builds shipped</span></li>
           <li class="reveal"><b data-count="5">5</b><span>Certifications earned</span></li>
           <li class="reveal"><b data-count="3">3</b><span>Companies, since 2023</span></li>
         </ul>
-      </div>
-
-      <div class="about2__after">
-      <div class="duo reveal">
-        <article class="duo__half duo__half--day">
-          <i class="duo__icon" aria-hidden="true"></i>
-          <span class="label">(By day)</span>
-          <h3>Team lead</h3>
-          <p>Lead .NET Developer at Revalsys Technologies, Hyderabad.</p>
-          <ul>
-            <li>RevalERP and the E-commerce platform</li>
-            <li>25+ ERP modules across HRMS, Finance, POS and more</li>
-            <li>Sprint planning, reviews and production releases</li>
-          </ul>
-        </article>
-        <article class="duo__half duo__half--night">
-          <i class="duo__icon" aria-hidden="true"></i>
-          <span class="label">(By night)</span>
-          <h3>Freelance builder</h3>
-          <p>Websites and tools for clients, built end to end.</p>
-          <ul>
-            <li>CMS websites live in five days</li>
-            <li>HRMS and hiring tools</li>
-            <li>40+ builds shipped</li>
-          </ul>
-        </article>
-      </div>
       </div>
     </section>
 
@@ -777,5 +754,6 @@
   <script src="liquid.js"></script>
   <script src="script.js"></script>
   <script src="os.js"></script>
+  <script src="badge.js"></script>
 </body>
 </html>
