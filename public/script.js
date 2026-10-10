@@ -78,13 +78,44 @@
     // Hero copy comes in with the name, not on scroll
     document.querySelectorAll('.hero .reveal').forEach(function (el) { el.classList.add('in'); });
 
-    // The title runs in from the left first. When its last letter lands, the same motion carries
-    // on into the photo: a red-edged ripple sweeps across it left to right and uncovers it.
-    var letters = document.querySelectorAll('.hero__title .hl');
-    setTimeout(function () {
-      document.querySelector('.hero__portrait').classList.add('is-shown');
-      if (window.Liquid) window.Liquid.reveal();
-    }, reduced ? 0 : letters.length * 55 + 700);
+    // One ripple crosses the whole hero from left to right. Each letter of the name appears as
+    // the ripple reaches it, red while the ripple is on it and black once it has passed. The same
+    // ripple carries straight on into the photo and uncovers it, so name and photo arrive together.
+    var portrait = document.querySelector('.hero__portrait');
+    var letters = Array.prototype.slice.call(document.querySelectorAll('.hero__title .hl'));
+    portrait.classList.add('is-shown');
+    if (reduced) {
+      letters.forEach(function (el) { el.classList.add('is-hit', 'is-done'); });
+      if (window.Liquid) window.Liquid.show();
+      return;
+    }
+    var pr = portrait.getBoundingClientRect();
+    // Letters that sit on the dark figure need true red: the title is drawn in "difference",
+    // which turns the usual teal into red on the pale page but would leave it teal over the photo
+    var figureLeft = pr.left + pr.width * 0.36, figureRight = pr.left + pr.width * 0.70;
+    var spans = letters.map(function (el) {
+      var r = el.getBoundingClientRect(), mid = (r.left + r.right) / 2;
+      return { el: el, left: r.left, right: r.right, onFigure: mid > figureLeft && mid < figureRight };
+    });
+    var from = Math.min(pr.left, spans.length ? spans[0].left : 0) - 30;
+    var to = Math.max(pr.right, spans.length ? spans[spans.length - 1].right : 0) + pr.width * 0.25;
+    var tail = window.innerWidth * 0.07;          // how long a letter stays red behind the ripple
+    var SWEEP_MS = 2900, FADE_MS = 700, began = performance.now();
+    (function sweep(now) {
+      var t = Math.min(1, (now - began) / SWEEP_MS);
+      // steady across the name, easing off as it leaves the photo
+      var x = from + (to - from) * (1 - Math.pow(1 - t, 1.6));
+      for (var i = 0; i < spans.length; i++) {
+        var s = spans[i];
+        if (x >= s.left) s.el.classList.add('is-hit');
+        if (s.onFigure && x >= s.right) s.el.classList.add('is-over');   // the photo is under it now
+        if (x >= s.right + tail) s.el.classList.add('is-done');
+      }
+      var fade = Math.max(0, (now - began - SWEEP_MS) / FADE_MS);
+      if (window.Liquid) window.Liquid.setFront(x, Math.max(0, 1 - fade));
+      if (fade < 1) requestAnimationFrame(sweep);
+      else letters.forEach(function (el) { el.classList.add('is-hit', 'is-done'); });
+    })(began);
   }
 
   // The loader tells the story of the logo. The name is shown with its two initials in red and
@@ -348,7 +379,6 @@
   }
 
   // The hero name is split into letters so each can run in from the left and react to the pointer
-  var letterIndex = 0;
   document.querySelectorAll('.hero__title .line > span').forEach(function (line) {
     var text = line.textContent;
     line.textContent = '';
@@ -358,9 +388,6 @@
       span.className = 'hl';
       span.setAttribute('aria-hidden', 'true');
       span.textContent = ch;
-      // Delay the run-in per letter, but never the hover colour
-      var delay = (letterIndex++ * 0.055).toFixed(3) + 's';
-      span.style.transitionDelay = delay + ', ' + delay + ', 0s';
       line.appendChild(span);
     });
   });

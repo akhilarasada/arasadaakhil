@@ -1,6 +1,7 @@
 // Liquid portrait: the hero photo is drawn in WebGL so it behaves like the surface of water.
-// It arrives as a wave: Liquid.reveal() sends a rippling red-edged front across the photo from
-// left to right, the same ripple the pointer makes, and the photo is uncovered behind it.
+// It arrives as a wave: script.js runs one ripple across the whole hero, through the title and
+// on into the photo. Liquid.setFront(x, strength) tells this file where that ripple is on the
+// screen; the photo is uncovered behind it, with the same red edge the pointer makes.
 // Afterwards, moving the pointer across the hero sends rings through it with that red edge.
 // If WebGL is missing the plain <img> simply stays.
 
@@ -12,8 +13,7 @@
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
   var POINTS = 10;
-  var REVEAL_MS = 2500;
-  var canvas = document.createElement('canvas');
+    var canvas = document.createElement('canvas');
   var gl = canvas.getContext('webgl', { premultipliedAlpha: false, antialias: false, alpha: true });
   if (!gl) return;
 
@@ -100,7 +100,8 @@
 
   var points = new Float32Array(POINTS * 3), next = 0;
   var last = null, visible = true, started = performance.now();
-  var revealAt = null, pendingReveal = false, live = false;
+  // Where the arriving ripple is, across the photo: below 0 nothing shows, above 1 all of it
+  var frontAt = -1, frontStrength = 0, arrived = false;
 
   function resize() {
     var r = holder.getBoundingClientRect();
@@ -115,7 +116,7 @@
   }
 
   function drop(clientX, clientY) {
-    if (revealAt === null) return;     // the pointer does nothing until the photo has arrived
+    if (!arrived) return;              // the pointer does nothing until the photo has arrived
     var uv = toUv(clientX, clientY);
     if (last) {
       var dx = clientX - last.x, dy = clientY - last.y, dist = Math.sqrt(dx * dx + dy * dy);
@@ -134,27 +135,26 @@
     if (!visible || document.hidden) return;
     for (var i = 0; i < POINTS; i++) points[i * 3 + 2] *= 0.968;
 
-    // The front runs from just off the left edge to just off the right, easing in and out
-    var t = revealAt === null ? 0 : Math.max(0, Math.min(1, (now - revealAt) / REVEAL_MS));
-    var eased = t * t * (3 - 2 * t);
+
     gl.uniform1f(U.uAspect, canvas.width / canvas.height);
     gl.uniform1f(U.uTime, (now - started) / 1000);
-    gl.uniform1f(U.uReveal, -0.2 + eased * 1.45);
-    // the waves stay strong while the front is crossing and die away as it leaves
-    gl.uniform1f(U.uFront, revealAt === null ? 0 : 1 - Math.pow(t, 4));
+    gl.uniform1f(U.uReveal, frontAt);
+    gl.uniform1f(U.uFront, frontStrength);
     gl.uniform3fv(U.uP, points);
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   }
 
-  function begin() { revealAt = performance.now(); }
-
-  // Called by script.js once the title has finished running in
   window.Liquid = {
-    reveal: function () {
-      if (live) begin();
-      else pendingReveal = true;
-    }
+    // clientX: the ripple's position on screen. strength: 1 while it travels, fading to 0 after.
+    setFront: function (clientX, strength) {
+      var r = holder.getBoundingClientRect();
+      frontAt = (clientX - r.left) / r.width;
+      frontStrength = strength;
+      if (frontAt > 1.2) arrived = true;
+    },
+    // Show the whole photo at once (used when the sweep is skipped)
+    show: function () { frontAt = 2; frontStrength = 0; arrived = true; }
   };
 
   function start() {
@@ -168,8 +168,6 @@
     if ('IntersectionObserver' in window) {
       new IntersectionObserver(function (entries) { visible = entries[0].isIntersecting; }).observe(hero);
     }
-    live = true;
-    if (pendingReveal) begin();
     requestAnimationFrame(frame);
   }
   if (img.complete && img.naturalWidth) start();
