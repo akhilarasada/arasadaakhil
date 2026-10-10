@@ -251,7 +251,10 @@
           <div><dt>Year</dt><dd>2026</dd></div>
           <div><dt>Team</dt><dd>Revalsys Technologies</dd></div>
         </dl>
-        <a class="link-btn" href="https://revalsys.revalerp.com/" target="_blank" rel="noopener" data-cursor="Visit">revalsys.revalerp.com <span aria-hidden="true">↗</span></a>
+        <div class="project__cta">
+          <a class="link-btn" href="https://revalsys.revalerp.com/" target="_blank" rel="noopener" data-cursor="Visit">revalsys.revalerp.com <span aria-hidden="true">↗</span></a>
+          <button type="button" class="play-btn" data-game="cube" data-cursor="Play"><i></i>Solve the cube · win 10% off</button>
+        </div>
       
               </div>
               <div class="project__body">
@@ -264,7 +267,10 @@
           <div><dt>Year</dt><dd>2024 — 2026</dd></div>
           <div><dt>Team</dt><dd>Sphinx Worldbiz</dd></div>
         </dl>
-        <a class="link-btn" href="https://www.shrmpro.com/" target="_blank" rel="noopener" data-cursor="Visit">shrmpro.com <span aria-hidden="true">↗</span></a>
+        <div class="project__cta">
+          <a class="link-btn" href="https://www.shrmpro.com/" target="_blank" rel="noopener" data-cursor="Visit">shrmpro.com <span aria-hidden="true">↗</span></a>
+          <button type="button" class="play-btn" data-game="queens" data-cursor="Play"><i></i>Seat the team leads · win 10% off</button>
+        </div>
       
               </div>
               <div class="project__body">
@@ -277,6 +283,9 @@
           <div><dt>Year</dt><dd>2023 — 2024</dd></div>
           <div><dt>Team</dt><dd>Virtusa</dd></div>
         </dl>
+        <div class="project__cta">
+          <button type="button" class="play-btn" data-game="anchor" data-cursor="Play"><i></i>Anchor the session · win 10% off</button>
+        </div>
       
               </div>
                 </div>
@@ -501,17 +510,24 @@
       <div class="resume__grid">
         <div class="resume__body reveal">
           <p class="resume__lead">The whole story on two pages: skills, experience, projects and certifications.</p>
-          <p class="resume__desc">Take it with you for your hiring team, or open it right here and read it in the browser.</p>
+          <p class="resume__desc">Point at a line below to find it on the page, read it here without leaving the site, or take the file with you.</p>
+          <ul class="resume__toc">
+            <li><a href="assets/Arasada-Akhil-Resume.pdf" target="_blank" rel="noopener" data-read="1" data-zone="7,18.5"><span>01</span><b>Summary</b><em>Who I am, in five lines</em></a></li>
+            <li><a href="assets/Arasada-Akhil-Resume.pdf" target="_blank" rel="noopener" data-read="1" data-zone="18.5,51"><span>02</span><b>Technical skills</b><em>Backend, data, cloud, frontend, leadership</em></a></li>
+            <li><a href="assets/Arasada-Akhil-Resume.pdf" target="_blank" rel="noopener" data-read="1" data-zone="51,97.5"><span>03</span><b>Experience</b><em>Revalsys · Sphinx Worldbiz · Virtusa</em></a></li>
+            <li><a href="assets/Arasada-Akhil-Resume.pdf#page=2" target="_blank" rel="noopener" data-read="2"><span>04</span><b>Projects &amp; certifications</b><em>Page two →</em></a></li>
+          </ul>
           <div class="resume__actions">
             <a class="btn btn--red" href="assets/Arasada-Akhil-Resume.pdf" download="Arasada-Akhil-Resume.pdf">Download resume <span aria-hidden="true">↓</span></a>
-            <a class="link-btn" href="assets/Arasada-Akhil-Resume.pdf" target="_blank" rel="noopener">Preview <span aria-hidden="true">↗</span></a>
+            <a class="link-btn" href="assets/Arasada-Akhil-Resume.pdf" target="_blank" rel="noopener" data-read="1">Read it here <span aria-hidden="true">↗</span></a>
           </div>
         </div>
 
-        <a class="paper reveal" href="assets/Arasada-Akhil-Resume.pdf" target="_blank" rel="noopener" aria-label="Open resume preview in a new tab">
+        <a class="paper reveal" href="assets/Arasada-Akhil-Resume.pdf" target="_blank" rel="noopener" data-read="1" aria-label="Read the resume">
           <span class="paper__sheet paper__sheet--back" aria-hidden="true"></span>
           <span class="paper__sheet">
             <img src="assets/resume-preview.jpg" alt="First page of Arasada Akhil's resume" width="980" height="1268" loading="lazy">
+            <i class="paper__zone" aria-hidden="true"></i>
           </span>
           <span class="paper__tag" aria-hidden="true">PDF</span>
         </a>
@@ -571,25 +587,46 @@
       <p class="label">(Open to discuss projects)</p>
       <h2 class="reveal">Have a project?<br>Let's talk it through.</h2>
 
-      <div class="offer__grid">
-        <div class="offer__card reveal">
+      <div class="offer__grid" role="group" aria-label="What do you need?">
+        <label class="offer__card reveal">
+          <input type="checkbox" value="a CMS website">
           <span class="skill__no">01</span>
           <h3>CMS Websites</h3>
           <p>A website on my CMS platform, live in five days, that you can update yourself without calling a developer.</p>
-        </div>
-        <div class="offer__card reveal">
+          <i class="offer__pick" aria-hidden="true"></i>
+        </label>
+        <label class="offer__card reveal">
+          <input type="checkbox" value="an HRMS tool">
           <span class="skill__no">02</span>
           <h3>HRMS Tools</h3>
           <p>Hire-to-retire HR software: attendance, leave, payroll and roles, shaped around how your company actually works.</p>
-        </div>
-        <div class="offer__card reveal">
+          <i class="offer__pick" aria-hidden="true"></i>
+        </label>
+        <label class="offer__card reveal">
+          <input type="checkbox" value="a customised tool">
           <span class="skill__no">03</span>
           <h3>Customised Tools</h3>
           <p>A tool built for your business, whatever it is. Salons, studios, CA firms, recruiters: if a spreadsheet is holding it together, I can build it properly.</p>
-        </div>
+          <i class="offer__pick" aria-hidden="true"></i>
+        </label>
       </div>
 
-      <a href="#contact" class="btn btn--dark reveal" data-cursor="Let's talk">Discuss a project <span aria-hidden="true">→</span></a>
+      <div class="brief reveal" id="brief">
+        <div class="brief__rows">
+          <fieldset><legend class="label">For</legend>
+            <label class="chip"><input type="radio" name="who" value="just me"><span>Just me</span></label>
+            <label class="chip"><input type="radio" name="who" value="a small team" checked><span>A small team</span></label>
+            <label class="chip"><input type="radio" name="who" value="a whole company"><span>A whole company</span></label>
+          </fieldset>
+          <fieldset><legend class="label">When</legend>
+            <label class="chip"><input type="radio" name="when" value="starting this month"><span>This month</span></label>
+            <label class="chip"><input type="radio" name="when" value="in the next one to three months" checked><span>In 1–3 months</span></label>
+            <label class="chip"><input type="radio" name="when" value="with no fixed deadline"><span>No rush</span></label>
+          </fieldset>
+        </div>
+        <p class="brief__line" id="brief-line" aria-live="polite"></p>
+        <button type="button" class="btn btn--dark" id="brief-send" data-cursor="Let's talk">Discuss a project <span aria-hidden="true">→</span></button>
+      </div>
     </section>
 
     <!-- Contact -->
@@ -668,5 +705,7 @@
   <script src="script.js"></script>
   <script src="blocks.js"></script>
   <script src="badge.js"></script>
+  <script src="extras.js"></script>
+  <script src="games.js"></script>
 </body>
 </html>

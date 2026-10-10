@@ -50,8 +50,9 @@
       ctx.fillStyle = '#d9d7d2'; ctx.fillRect(px, py, pw, ph);
       if (photo) {
         ctx.filter = 'grayscale(1) contrast(1.15)';
-        var scale = pw / (photo.naturalWidth * 0.62);
-        ctx.drawImage(photo, px - photo.naturalWidth * 0.20 * scale, py - photo.naturalHeight * 0.06 * scale,
+        // fill the slot's height and keep the face in the middle of it
+        var scale = ph / (photo.naturalHeight * 0.86);
+        ctx.drawImage(photo, px + pw / 2 - photo.naturalWidth * 0.47 * scale, py - photo.naturalHeight * 0.005 * scale,
           photo.naturalWidth * scale, photo.naturalHeight * scale);
         ctx.filter = 'none';
       }
@@ -336,7 +337,7 @@
       };
       photo.onload = function () { go(photo); };
       photo.onerror = function () { go(null); };
-      photo.src = 'assets/akhil.webp';
+      photo.src = 'assets/akhil-badge.webp';
       // Never wait on a slow photo: the badge appears without it after a few seconds
       setTimeout(function () { go(photo.complete && photo.naturalWidth ? photo : null); }, 4000);
     }, function () { /* no 3D: the flat card stays */ });

@@ -527,8 +527,9 @@
     var W = pileEl.clientWidth, H = pileEl.clientHeight;
     pileEl.classList.add('is-live');
 
-    var engine = M.Engine.create();
-    engine.gravity.y = 1.1;
+    // Pills that have come to rest go to sleep, so a settled heap stays perfectly still
+    var engine = M.Engine.create({ enableSleeping: true, positionIterations: 10, velocityIterations: 8 });
+    engine.gravity.y = 1;
     var wall = { isStatic: true, friction: 0.6 };
     M.Composite.add(engine.world, [
       M.Bodies.rectangle(W / 2, H + 50, W + 400, 100, wall),
@@ -545,7 +546,7 @@
         Math.max(s.w / 2 + 8, Math.min(W - s.w / 2 - 8, ((i % 6) + 0.5) * (W / 6) + (Math.random() - 0.5) * 60)),
         s.h / 2 + 10 + Math.floor(i / 6) * (H * 0.13) + Math.random() * 14,
         s.w, s.h,
-        { chamfer: { radius: s.h / 2 - 1 }, restitution: 0.35, friction: 0.5, frictionAir: 0.012, angle: (Math.random() - 0.5) * 0.9 }
+        { chamfer: { radius: s.h / 2 - 1 }, restitution: 0.12, friction: 0.7, frictionStatic: 0.9, frictionAir: 0.03, sleepThreshold: 40, angle: (Math.random() - 0.5) * 0.5 }
       );
       return body;
     });
@@ -559,7 +560,7 @@
       pileEl.removeEventListener(type, mouse.mousemove);
       pileEl.removeEventListener(type, mouse.mouseup);
     });
-    M.Composite.add(engine.world, M.MouseConstraint.create(engine, { mouse: mouse, constraint: { stiffness: 0.18, damping: 0.1 } }));
+    M.Composite.add(engine.world, M.MouseConstraint.create(engine, { mouse: mouse, constraint: { stiffness: 0.12, damping: 0.25 } }));
 
     // Place them straight away so there is never a frame with every pill stacked in the corner
     bodies.forEach(function (body, i) {
@@ -567,7 +568,7 @@
         (body.position.y - sizes[i].h / 2).toFixed(1) + 'px,0) rotate(' + body.angle.toFixed(3) + 'rad)';
     });
 
-    pile = { M: M, engine: engine, bodies: bodies, pills: pills, sizes: sizes, visible: true };
+    pile = { M: M, engine: engine, bodies: bodies, pills: pills, sizes: sizes, visible: true, last: 0, acc: 0 };
   }
   if (pileEl && 'IntersectionObserver' in window) {
     new IntersectionObserver(function (entries) {
@@ -604,19 +605,23 @@
         }
       }
 
-      // Pile: step the physics, and let a hard scroll jolt the pills
+      // Pile: step the physics in fixed slices of real time, so it runs at the same speed on
+      // every screen, and only move the pills that are actually moving
       if (pile && pile.visible) {
-        var jolt = y - pileLastY;
-        if (Math.abs(jolt) > 26) {
-          pile.bodies.forEach(function (b) {
-            pile.M.Body.applyForce(b, b.position, { x: (Math.random() - 0.5) * 0.02 * b.mass, y: -Math.min(0.022, Math.abs(jolt) * 0.0005) * b.mass });
-          });
+        var pnow = performance.now();
+        pile.acc += Math.min(50, pile.last ? pnow - pile.last : 16.7);
+        pile.last = pnow;
+        var stepped = false;
+        while (pile.acc >= 8.333) { pile.M.Engine.update(pile.engine, 8.333); pile.acc -= 8.333; stepped = true; }
+        if (stepped) {
+          for (var pi = 0; pi < pile.bodies.length; pi++) {
+            var pb = pile.bodies[pi], ps = pile.sizes[pi];
+            if (pb.isSleeping) continue;
+            pile.pills[pi].style.transform = 'translate3d(' + (pb.position.x - ps.w / 2).toFixed(2) + 'px,' + (pb.position.y - ps.h / 2).toFixed(2) + 'px,0) rotate(' + pb.angle.toFixed(4) + 'rad)';
+          }
         }
-        pile.M.Engine.update(pile.engine, 1000 / 60);
-        for (var pi = 0; pi < pile.bodies.length; pi++) {
-          var pb = pile.bodies[pi], ps = pile.sizes[pi];
-          pile.pills[pi].style.transform = 'translate3d(' + (pb.position.x - ps.w / 2).toFixed(1) + 'px,' + (pb.position.y - ps.h / 2).toFixed(1) + 'px,0) rotate(' + pb.angle.toFixed(3) + 'rad)';
-        }
+      } else if (pile) {
+        pile.last = 0;
       }
       pileLastY = y;
 
