@@ -78,17 +78,13 @@
     // Hero copy comes in with the name, not on scroll
     document.querySelectorAll('.hero .reveal').forEach(function (el) { el.classList.add('in'); });
 
-    // The title runs in first. When its last letter lands, a ripple starts at the point where
-    // the title meets the photo, and the photo arrives behind that ripple.
+    // The title runs in from the left first. When its last letter lands, the same motion carries
+    // on into the photo: a red-edged ripple sweeps across it left to right and uncovers it.
     var letters = document.querySelectorAll('.hero__title .hl');
     setTimeout(function () {
-      var portrait = document.querySelector('.hero__portrait');
-      var line = document.querySelector('.hero__title .line');
-      var lastLetter = line && line.querySelector('.hl:last-child');
-      var r = (lastLetter || portrait).getBoundingClientRect();
-      portrait.classList.add('is-shown');
-      if (window.Liquid) window.Liquid.reveal(r.left + r.width * 0.5, r.top + r.height * 0.55);
-    }, reduced ? 0 : letters.length * 55 + 850);
+      document.querySelector('.hero__portrait').classList.add('is-shown');
+      if (window.Liquid) window.Liquid.reveal();
+    }, reduced ? 0 : letters.length * 55 + 700);
   }
 
   // The loader tells the story of the logo. The name is shown with its two initials in red and

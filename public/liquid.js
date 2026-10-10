@@ -1,7 +1,7 @@
 // Liquid portrait: the hero photo is drawn in WebGL so it behaves like the surface of water.
-// It arrives as a ripple: Liquid.reveal(x, y) starts a ring at that point of the screen and the
-// photo appears behind the ring as it spreads. Afterwards, moving the pointer across the hero
-// sends smaller rings through it, and the rings split off a red edge.
+// It arrives as a wave: Liquid.reveal() sends a rippling red-edged front across the photo from
+// left to right, the same ripple the pointer makes, and the photo is uncovered behind it.
+// Afterwards, moving the pointer across the hero sends rings through it with that red edge.
 // If WebGL is missing the plain <img> simply stays.
 
 (function () {
@@ -12,7 +12,7 @@
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
   var POINTS = 10;
-  var REVEAL_MS = 1900;
+  var REVEAL_MS = 2500;
   var canvas = document.createElement('canvas');
   var gl = canvas.getContext('webgl', { premultipliedAlpha: false, antialias: false, alpha: true });
   if (!gl) return;
@@ -21,7 +21,7 @@
   var FRAG = [
     'precision mediump float;',
     'uniform sampler2D uTex; uniform float uAspect; uniform float uTime;',
-    'uniform vec2 uOrigin; uniform float uReveal; uniform float uFront;',
+    'uniform float uReveal; uniform float uFront;',
     'uniform vec3 uP[' + POINTS + '];',
     'varying vec2 vUv;',
     // Same look the photo had in CSS: black and white, a touch more contrast and brightness
@@ -36,11 +36,11 @@
     '    disp += normalize(d + 1e-5) * sin(r * 44.0 - uTime * 9.0) * exp(-r * 6.5) * pt.z;',
     '  }',
     '  disp *= 0.038;',
-    // The arrival: a band of waves travelling outward from where the title handed over
-    '  vec2 fromOrigin = vUv - uOrigin; fromOrigin.x *= uAspect;',
-    '  float dist = length(fromOrigin);',
-    '  float edge = dist - uReveal;',
-    '  disp += normalize(fromOrigin + 1e-5) * sin(edge * 42.0) * exp(-abs(edge) * 9.0) * 0.03 * uFront;',
+    // The arrival: a wavy front sweeping left to right, dragging the image sideways as it passes.
+    // That drag is what tears the red edge off, exactly as a pointer ripple does.
+    '  float front = uReveal + 0.035 * sin(vUv.y * 13.0 + uTime * 5.0) + 0.018 * sin(vUv.y * 31.0 - uTime * 7.0);',
+    '  float edge = vUv.x - front;',
+    '  disp += vec2(1.0, 0.25 * sin(vUv.y * 20.0 + uTime * 6.0)) * sin(edge * 46.0 - uTime * 10.0) * exp(-abs(edge) * 8.0) * 0.05 * uFront;',
     // A slow swell so the surface is never perfectly still
     '  disp += 0.0022 * vec2(sin(vUv.y * 9.0 + uTime * 0.9), cos(vUv.x * 8.0 + uTime * 0.7));',
     '  float amount = length(disp);',
@@ -50,8 +50,8 @@
     // Where a ripple drags a darker copy of the image out of place, that edge prints in red
     '  float fringe = clamp((base - ghost) * 3.0, 0.0, 1.0) * smoothstep(0.003, 0.012, amount);',
     '  col = mix(col, vec3(0.82, 0.14, 0.14), fringe);',
-    // Nothing is drawn ahead of the arriving ring
-    '  gl_FragColor = vec4(col, smoothstep(0.0, -0.14, edge));',
+    // Nothing is drawn ahead of the front
+    '  gl_FragColor = vec4(col, smoothstep(0.02, -0.10, edge));',
     '}'
   ].join('\n');
 
@@ -93,14 +93,14 @@
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 
-    ['uTex', 'uAspect', 'uTime', 'uOrigin', 'uReveal', 'uFront', 'uP'].forEach(function (n) { U[n] = gl.getUniformLocation(prog, n); });
+    ['uTex', 'uAspect', 'uTime', 'uReveal', 'uFront', 'uP'].forEach(function (n) { U[n] = gl.getUniformLocation(prog, n); });
     gl.uniform1i(U.uTex, 0);
     return true;
   }
 
   var points = new Float32Array(POINTS * 3), next = 0;
   var last = null, visible = true, started = performance.now();
-  var origin = [0.5, 0.5], revealAt = null, pendingReveal = null, live = false;
+  var revealAt = null, pendingReveal = false, live = false;
 
   function resize() {
     var r = holder.getBoundingClientRect();
@@ -134,29 +134,26 @@
     if (!visible || document.hidden) return;
     for (var i = 0; i < POINTS; i++) points[i * 3 + 2] *= 0.968;
 
-    // The ring grows from nothing to past the far corner, easing out as it goes
+    // The front runs from just off the left edge to just off the right, easing in and out
     var t = revealAt === null ? 0 : Math.max(0, Math.min(1, (now - revealAt) / REVEAL_MS));
-    var eased = 1 - Math.pow(1 - t, 3);
+    var eased = t * t * (3 - 2 * t);
     gl.uniform1f(U.uAspect, canvas.width / canvas.height);
     gl.uniform1f(U.uTime, (now - started) / 1000);
-    gl.uniform2f(U.uOrigin, origin[0], origin[1]);
-    gl.uniform1f(U.uReveal, eased * 2.2);
-    gl.uniform1f(U.uFront, 1 - t);
+    gl.uniform1f(U.uReveal, -0.2 + eased * 1.45);
+    // the waves stay strong while the front is crossing and die away as it leaves
+    gl.uniform1f(U.uFront, revealAt === null ? 0 : 1 - Math.pow(t, 4));
     gl.uniform3fv(U.uP, points);
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   }
 
-  function begin(clientX, clientY) {
-    origin = toUv(clientX, clientY);
-    revealAt = performance.now();
-  }
+  function begin() { revealAt = performance.now(); }
 
   // Called by script.js once the title has finished running in
   window.Liquid = {
-    reveal: function (clientX, clientY) {
-      if (live) begin(clientX, clientY);
-      else pendingReveal = [clientX, clientY];
+    reveal: function () {
+      if (live) begin();
+      else pendingReveal = true;
     }
   };
 
@@ -172,7 +169,7 @@
       new IntersectionObserver(function (entries) { visible = entries[0].isIntersecting; }).observe(hero);
     }
     live = true;
-    if (pendingReveal) begin(pendingReveal[0], pendingReveal[1]);
+    if (pendingReveal) begin();
     requestAnimationFrame(frame);
   }
   if (img.complete && img.naturalWidth) start();
