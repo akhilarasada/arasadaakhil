@@ -110,12 +110,14 @@
     })(began);
   }
 
-  // The loader tells the story of the logo. The name is first signed by hand, a pen writing it
-  // left to right and underlining it. The signature then becomes type, with the two initials in
-  // red. The other letters tuck in behind their initial and vanish, and what is left ("AA" and
-  // the block) turns black and travels to the top-left corner, where it becomes the site's logo.
+  // The loader tells the story of the logo. The red block is a cursor: it runs across the empty
+  // page and the name compiles behind it, each letter flickering through code symbols before it
+  // locks in, the two initials in red. The other letters then tuck in behind their initial and
+  // vanish, and what is left ("AA" and the block) turns black and travels to the top-left
+  // corner, where it becomes the site's logo.
   var mark = loader.querySelector('.loader__mark');
-  var sign = loader.querySelector('.loader__sign');
+  var block = loader.querySelector('.loader__block');
+  var count = document.getElementById('loader-count');
   var hasLetters = false;
   document.querySelectorAll('[data-shuffle]').forEach(function (word) {
     var text = word.textContent;
@@ -135,7 +137,6 @@
   function settle() {
     if (moved || !pageReady || !signed) return;
     moved = true;
-    loader.classList.add('is-typed');                   // the signature gives way to the typed name
     setTimeout(function () {
       loader.classList.add('is-collapsing');            // letters tuck in behind the two initials
     }, 620);
@@ -152,31 +153,48 @@
     }, 620 + 820);
     setTimeout(finish, 620 + 820 + 900);
   }
-  if (reduced || !hasLetters || !sign) {
-    loader.classList.add('is-typed');
+  if (reduced || !hasLetters || !block) {
     window.addEventListener('load', finish);
   } else {
-    // Write the signature: uncover it left to right with a pen point riding the edge
-    var WRITE_MS = 1500, wroteAt = null;
-    var write = function (now) {
-      if (wroteAt === null) wroteAt = now;
-      var t = Math.min(1, (now - wroteAt) / WRITE_MS);
-      // a hand speeds up and slows down as it writes
+    var GLYPHS = '<>/{}[]()=+*#;01', BUILD_MS = 1700, FLICKER_MS = 300;
+    var lts = [].slice.call(mark.querySelectorAll('.lt'));
+    // each letter keeps its final width while it flickers, so the line never jitters
+    var slots = lts.map(function (el) {
+      var r = el.getBoundingClientRect();
+      el.style.width = r.width.toFixed(2) + 'px';
+      return { el: el, ch: el.textContent, right: 0, w: r.width, at: null, done: false };
+    });
+    var blockLeft = block.getBoundingClientRect().left;
+    var span = blockLeft - slots[0].el.getBoundingClientRect().left + 12;
+    slots.forEach(function (s) { s.right = s.el.getBoundingClientRect().right; s.el.classList.add('is-off'); });
+    loader.classList.add('is-building');
+    var builtAt = null;
+    var build = function (now) {
+      if (builtAt === null) builtAt = now;
+      var t = Math.min(1, (now - builtAt) / BUILD_MS);
       var p = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
-      sign.style.setProperty('--w', (p * 104 - 2).toFixed(2) + '%');
-      sign.style.setProperty('--bob', (Math.sin(t * 38) * 9).toFixed(1) + 'px');
-      if (t < 1) { requestAnimationFrame(write); return; }
-      loader.classList.add('is-underlined');            // the flourish under the name
-      setTimeout(function () { signed = true; settle(); }, 720);
+      var shift = -(1 - p) * span, edge = blockLeft + shift, busy = false;
+      block.style.transform = 'translateX(' + shift.toFixed(1) + 'px)';
+      if (count) count.textContent = ('00' + Math.round(p * 100)).slice(-3);
+      slots.forEach(function (s) {
+        if (s.done) return;
+        if (s.at === null) {
+          if (s.right > edge) { busy = true; return; }      // the cursor has not passed it yet
+          s.at = now; s.el.classList.remove('is-off'); s.el.classList.add('is-raw');
+        }
+        if (now - s.at >= FLICKER_MS) {
+          s.el.textContent = s.ch; s.el.classList.remove('is-raw'); s.el.style.width = ''; s.done = true;
+        } else {
+          busy = true;
+          s.el.textContent = GLYPHS.charAt(Math.floor(Math.random() * GLYPHS.length));
+        }
+      });
+      if (t < 1 || busy) { requestAnimationFrame(build); return; }
+      block.style.transform = '';
+      loader.classList.add('is-built');
+      setTimeout(function () { signed = true; settle(); }, 260);
     };
-    var beginWriting = function () { requestAnimationFrame(write); };
-    // wait for the handwriting face, but never for long
-    if (document.fonts && document.fonts.load) {
-      var fallback = setTimeout(beginWriting, 1200);
-      document.fonts.load('60px "Mrs Saint Delafield"').then(function () { clearTimeout(fallback); beginWriting(); }, function () {});
-    } else {
-      beginWriting();
-    }
+    requestAnimationFrame(build);
     window.addEventListener('load', function () { pageReady = true; settle(); });
   }
   // Never leave the loader up if a resource hangs

@@ -1908,46 +1908,25 @@ html[data-invert] .win__media img { filter: invert(1) hue-rotate(180deg); }
 /* step 2: what is left turns black and travels to the corner */
 .loader.is-flying .lt--cap { color: var(--ink); }
 .loader.is-flying .loader__block { background: var(--ink); }
-/* The signature, written before the typed name appears */
-.loader__sign {
+/* Before all that, the block is a cursor and the name compiles behind it */
+.loader__word .lt.is-off { visibility: hidden; }
+.loader__word .lt.is-raw { color: var(--muted); font-weight: 400; text-align: center; overflow: hidden; }
+.loader.is-building .lt--cap { transition: none; }
+.loader__build {
   position: absolute;
-  left: 50%; top: 50%;
-  transform: translate(-50%, -54%);
-  display: inline-block;
-  white-space: nowrap;
-  transition: opacity 0.45s ease, filter 0.45s ease, transform 0.6s var(--ease);
+  left: var(--pad, 24px); right: var(--pad, 24px);
+  bottom: clamp(20px, 5vh, 48px);
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  transition: opacity 0.35s ease;
 }
-.loader__sign-text {
-  display: block;
-  padding: 0.1em 0.25em 0.05em;
-  font-family: "Mrs Saint Delafield", "Brush Script MT", cursive;
-  font-size: clamp(84px, 15vw, 230px);
-  line-height: 1;
-  color: var(--ink);
-  /* uncovered left to right as --w grows, like ink following the pen */
-  -webkit-mask-image: linear-gradient(90deg, #000 calc(var(--w, -2%) - 5%), transparent var(--w, -2%));
-  mask-image: linear-gradient(90deg, #000 calc(var(--w, -2%) - 5%), transparent var(--w, -2%));
-}
-.loader__sign-line { position: absolute; left: 6%; right: 2%; bottom: -4%; width: 92%; height: 0.24em; font-size: clamp(84px, 15vw, 230px); overflow: visible; }
-.loader__sign-line path { fill: none; stroke: var(--red); stroke-width: 2.4; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; opacity: 0; transition: stroke-dashoffset 0.65s cubic-bezier(0.6, 0, 0.2, 1); }
-.loader.is-underlined .loader__sign-line path { stroke-dashoffset: 0; opacity: 1; }
-/* the pen point riding the edge of the ink */
-.loader__pen {
-  position: absolute;
-  left: var(--w, -2%);
-  top: 50%;
-  width: 9px; height: 9px;
-  margin: -4px 0 0 -4px;
-  border-radius: 50%;
-  background: var(--red);
-  transform: translateY(var(--bob, 0px));
-  transition: opacity 0.3s;
-}
-.loader.is-underlined .loader__pen { opacity: 0; }
-/* the signature gives way to the typed name */
-.loader__mark { opacity: 0; transition: transform 0.85s cubic-bezier(0.7, 0, 0.2, 1), opacity 0.45s ease 0.15s; }
-.loader.is-typed .loader__mark { opacity: 1; }
-.loader.is-typed .loader__sign { opacity: 0; filter: blur(6px); transform: translate(-50%, -54%) scale(0.94); }
+.loader__build b { font-family: var(--display); font-weight: 600; font-size: clamp(28px, 5vw, 64px); letter-spacing: -0.03em; color: var(--ink); font-variant-numeric: tabular-nums; line-height: 1; }
+.loader.is-collapsing .loader__build { opacity: 0; }
 
 /* ---------- Selected Work: the 3D blocks ---------- */
 .blocks3d {
