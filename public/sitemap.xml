@@ -1,17 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://arasadaakhil.website/</loc>
-    <lastmod>2026-10-10</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>1.0</priority>
-    <image:image><image:loc>https://arasadaakhil.website/assets/akhil.webp</image:loc></image:image>
-    <image:image><image:loc>https://arasadaakhil.website/assets/og-image.jpg</image:loc></image:image>
+    <lastmod>2026-10-11</lastmod>
   </url>
   <url>
-    <loc>https://arasadaakhil.website/legal.html</loc>
+    <loc>https://arasadaakhil.website/legal</loc>
     <lastmod>2026-10-10</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.2</priority>
   </url>
 </urlset>
