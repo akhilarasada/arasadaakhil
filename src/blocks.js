@@ -202,6 +202,7 @@
     if (hud) {
       hud.querySelector('[data-hud="exit"]').addEventListener('click', endGame);
       hud.querySelector('[data-hud="form"]').addEventListener('click', function () {
+        if (!issued || !game) return;                 // no code was issued, so there is nothing to claim
         var text = 'Coupon ' + issued + ' (I won "' + game.title + '").\n\nMy project: ';
         endGame();
         if (window.portfolioBrief) window.portfolioBrief(text);
